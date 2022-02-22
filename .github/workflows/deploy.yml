@@ -52,10 +52,10 @@ jobs:
           docker build --pull --tag ${{ env.IMAGE }} --tag ghcr.io/${{ github.repository }}:latest .
           docker push ghcr.io/${{ github.repository }} --all-tags
 
-#      - uses: nais/deploy/actions/deploy@v1
-#        env:
-#          PRINT_PAYLOAD: true
-#          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
-#          CLUSTER: dev-gcp
-#          RESOURCE: .nais/app.yml,.nais/alert.yml
-#          VARS: .nais/dev.yml
+      - uses: nais/deploy/actions/deploy@v1
+        env:
+          PRINT_PAYLOAD: true
+          APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
+          CLUSTER: dev-gcp
+          RESOURCE: .nais/app.yml
+          VARS: .nais/dev.yml
