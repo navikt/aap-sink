@@ -12,11 +12,15 @@ import kotlinx.coroutines.runBlocking
 import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.Topology
+import org.apache.kafka.streams.kstream.Branched
 import org.apache.kafka.streams.kstream.Consumed
+import org.slf4j.LoggerFactory
 
 fun main() {
     embeddedServer(Netty, port = 8080, module = Application::app).start(wait = true)
 }
+
+private val log = LoggerFactory.getLogger("app")
 
 fun Application.app(kafka: Kafka = KStreams()) {
     val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
@@ -38,16 +42,19 @@ fun Application.app(kafka: Kafka = KStreams()) {
 }
 
 fun createTopology(topic: Topic): Topology = StreamsBuilder().apply {
-    stream(topic.name, Consumed.with(Serdes.StringSerde(), topic.valueSerde))
-        .foreach { _, søker ->
-            runBlocking {
-                Repo.save(søker, topic)
-            }
-        }
+    val stream = stream(topic.name, Consumed.with(Serdes.StringSerde(), topic.valueSerde))
+        .split()
+        .branch({ _, value -> value == null }, Branched.`as`("deleted"))
+        .branch({ _, value -> value != null }, Branched.`as`("valued"))
+        .defaultBranch(Branched.`as`("default"))
+
+    stream["deleted"]?.foreach { key, _ -> log.info("found tombstone for personident $key") }
+    stream["valued"]?.foreach { _, søker -> runBlocking { Repo.save(søker, topic) } }
+    stream["default"]?.foreach { key, value -> log.info("unhandled and ignored: $key $value") }
+
 }.build()
 
 fun Routing.actuator(prometheus: PrometheusMeterRegistry) {
-
     route("/actuator") {
         get("/metrics") { call.respond(prometheus.scrape()) }
         get("/live") { call.respond("sink") }
