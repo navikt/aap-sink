@@ -51,7 +51,7 @@ internal class Test {
         private lateinit var søkere: TestInputTopic<String, Soker>
     }
 
-    fun defaultSøker(): Soker = Soker.newBuilder()
+    private fun defaultSøker(): Soker = Soker.newBuilder()
         .setPersonident("123")
         .setFodselsdato(LocalDate.now().minusYears(30))
         .setSaker(
