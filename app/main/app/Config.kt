@@ -41,6 +41,12 @@ inline fun <reified T : Any> Application.loadConfig(vararg resources: String = a
         .build()
         .loadConfigOrThrow(*resources)
 
+inline fun <reified T : Any> loadConfig(resource: String = "/application.yml"): T =
+    ConfigLoader.Builder()
+        .addFileExtensionMapping("yml", YamlParser())
+        .build()
+        .loadConfigOrThrow(resource)
+
 @Suppress("UNCHECKED_CAST")
 fun ConfigLoader.Builder.addKtorConfig(config: ApplicationConfig) = apply {
     val map = config.javaClass.getDeclaredField("map").let {
@@ -105,7 +111,7 @@ data class KafkaConfig(
     val consumer: Properties = kStreams + ssl + schemaRegistry + Properties().apply {
         this[ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG] = brokers
         this[ConsumerConfig.AUTO_OFFSET_RESET_CONFIG] = "earliest"
-        this[ConsumerConfig.GROUP_ID_CONFIG] = "aap-vedtak"
+        this[ConsumerConfig.GROUP_ID_CONFIG] = "aap-sink"
         this[ConsumerConfig.MAX_POLL_INTERVAL_MS_CONFIG] = 124_000
     }
 

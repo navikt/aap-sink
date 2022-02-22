@@ -25,14 +25,16 @@ object Repo {
             it.setValues(avro, topic)
         }
 
-        log.info("inserted row with id $insertedId")
+        log.info("inserted row with id ${insertedId[SøkerTable.id]}")
     }
 
     suspend fun search(personident: String, topic: Topic): List<Soker> = newSuspendedTransaction(Dispatchers.IO) {
-        SøkerTable.select(SøkerTable.personIdent eq personident).map {
-            val record = it[SøkerTable.record].encodeToByteArray()
-            topic.valueSerde.deserializer().deserialize(topic.name, record)
-        }
+        SøkerTable.select(SøkerTable.personIdent eq personident)
+            .onEach { log.info("found row with id ${it[SøkerTable.id]}") }
+            .map {
+                val record = it[SøkerTable.record].encodeToByteArray()
+                topic.valueSerde.deserializer().deserialize(topic.name, record)
+            }
     }
 
     private fun InsertStatement<Number>.setValues(søker: Soker, topic: Topic) {
@@ -42,7 +44,7 @@ object Repo {
     }
 }
 
-object SøkerTable : Table() {
+object SøkerTable : Table("SOKERE") {
     val id = long("id").autoIncrement()
     val personIdent = varchar("personident", 11)
     val record = text("record")

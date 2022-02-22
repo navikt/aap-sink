@@ -16,7 +16,9 @@ dependencies {
 
     implementation("org.apache.kafka:kafka-clients:3.1.0")
     implementation("org.apache.kafka:kafka-streams:3.1.0")
-    implementation("io.confluent:kafka-streams-avro-serde:7.0.1")
+    implementation("io.confluent:kafka-streams-avro-serde:7.0.1") {
+        exclude("org.apache.kafka", "kafka-clients")
+    }
 
     runtimeOnly("ch.qos.logback:logback-classic:1.2.10")
     runtimeOnly("net.logstash.logback:logstash-logback-encoder:7.0.1")
@@ -30,7 +32,9 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-dao:0.37.3")
 
     testImplementation(kotlin("test"))
-    testImplementation("org.apache.kafka:kafka-streams-test-utils:3.0.0")
+    testImplementation("org.apache.kafka:kafka-streams-test-utils:3.1.0")
+    testImplementation("io.ktor:ktor-server-test-host:1.6.7")
+    testImplementation("uk.org.webcompere:system-stubs-jupiter:2.0.1")
 }
 
 application {

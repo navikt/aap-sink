@@ -1,4 +1,16 @@
-db:
+database:
   url: jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE
   username: sa
   password: ""
+
+kafka:
+  application-id: ${KAFKA_STREAMS_APPLICATION_ID:-sink}
+  brokers: ${KAFKA_BROKERS:-localhost:9092}
+  security: ${KAFKA_SECURITY_ENABLED:-false}
+  truststorePath: ${KAFKA_TRUSTSTORE_PATH:-}
+  keystorePath: ${KAFKA_KEYSTORE_PATH:-}
+  credstorePsw: ${KAFKA_CREDSTORE_PASSWORD:-}
+  clientId: ${KAFKA_CLIENT_ID:-sink}
+  schema-registry-url: ${KAFKA_SCHEMA_REGISTRY:-http://localhost:8085}
+  schema-registry-user: ${KAFKA_SCHEMA_REGISTRY_USER:-}
+  schema-registry-pwd: ${KAFKA_SCHEMA_REGISTRY_PASSWORD:-}
