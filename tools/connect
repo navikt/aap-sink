@@ -1,0 +1,53 @@
+#!/bin/sh
+# find project id: gcloud projects list --filter=aap
+
+# USAGE
+# your your.name@nav.no
+if [ -z "$1" ]; then
+  echo "missing email argument. Example usage:"
+  echo "connect your.name@nav.no"
+  exit 1
+fi
+email=$1
+project=aap-dev-e48b
+
+user_valid_hour=5 # used to query db
+admin_valid_min=1 # used to create db user
+
+# GCP formatted datetime
+user_valid_gcp=$(date -v +${user_valid_hour}H -u +'%Y-%m-%dT%H:%M:%SZ')
+admin_valid_gcp=$(date -v +${admin_valid_min}M -u +'%Y-%m-%dT%H:%M:%SZ')
+
+# HUMAN formatted datetime (with correct time zone)
+user_valid_print=$(TZ=':Europe/Oslo' date -v +${user_valid_hour}H)
+admin_valid_print=$(TZ=':Europe/Oslo' date -v +${admin_valid_min}M)
+
+gcloud projects add-iam-policy-binding $project \
+  --member user:"$email" \
+  --role roles/cloudsql.instanceUser \
+  --condition="expression=request.time < timestamp('$user_valid_gcp'),title=temp_access"
+
+gcloud projects add-iam-policy-binding $project \
+  --member user:"$email" \
+  --role roles/cloudsql.admin \
+  --condition="expression=request.time < timestamp('$admin_valid_gcp'),title=temp_access"
+
+RED='\033[0;31m'
+BLCK='\033[0m'
+echo -e "${RED}role: admin ${BLCK} valid until ${RED} $admin_valid_print ${BLCK}"
+echo -e "${RED}role: user  ${BLCK} valid until ${RED} $user_valid_print ${BLCK}"
+
+# create database IAM user
+gcloud beta sql users create "$email" \
+  --instance=sink \
+  --type=cloud_iam_user \
+  --project $project
+
+# copy token to clipboard
+gcloud auth print-access-token | pbcopy
+echo -e "${RED}Copied token to clipboard ${BLCK}"
+
+# Start proxy
+con=$(gcloud sql instances describe sink --format="get(connectionName)" --project $project)
+echo "$con"
+./tools/cloud_sql_proxy -instances="$con"=tcp:5432
