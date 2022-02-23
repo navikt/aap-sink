@@ -15,4 +15,5 @@ The connect script uses a [proxy](tools/cloud_sql_proxy) to make it available wi
 NB! make sure you dont occupy the port **5432** with e.q a docker image of postgres already.
 
 **Connect with IDEA**
+
 ![img](tools/idea.png)
