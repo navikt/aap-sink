@@ -9,7 +9,6 @@ import io.ktor.server.netty.*
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.runBlocking
-import no.nav.aap.avro.vedtak.v1.Soker
 import org.apache.kafka.common.serialization.Serdes
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.Topology
@@ -42,22 +41,23 @@ fun Application.app(kafka: Kafka = KStreams()) {
     }
 }
 
-fun createTopology(topic: Topic): Topology = StreamsBuilder().apply {
-    stream(topic.name, Consumed.with(Serdes.StringSerde(), topic.valueSerde))
-        .peek { k, v -> log.info("consumed $k $v") }
-        .split()
-        .branch({ _, value -> value == null }, logDeleted())
-        .defaultBranch(saveRecords(topic))
-}.build()
+fun createTopology(topic: Topic): Topology =
+    StreamsBuilder().apply {
+        stream(topic.name, Consumed.with(Serdes.StringSerde(), topic.byteArraySerde))
+            .peek { k, v -> log.info("consumed $k $v") }
+            .split()
+            .branch({ _, value -> value == null }, logDeleted())
+            .defaultBranch(saveRecord())
+    }.build()
 
-private fun logDeleted() = Branched.withConsumer<String, Soker> {
-    it.foreach { key, _ -> log.info("found tombstone for personident $key") }
+private fun <V> logDeleted() = Branched.withConsumer<String, V> { streams ->
+    streams.foreach { key, _ -> log.info("found tombstone for personident $key") }
 }
 
-private fun saveRecords(topic: Topic) = Branched.withConsumer<String, Soker> {
-    it.foreach { _, søker ->
+private fun saveRecord() = Branched.withConsumer<String, ByteArray> { streams ->
+    streams.foreach { personident, søker ->
         runBlocking {
-            Repo.save(søker, topic)
+            Repo.save(personident, søker)
         }
     }
 }

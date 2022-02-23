@@ -10,6 +10,12 @@ spec:
   kafka:
     pool: {{kafka-pool}}
     streams: true
+  gcp:
+    sqlInstances:
+      - type: POSTGRES_12
+        databases:
+          - name: aap-sink-db
+            envVarPrefix: DB
   replicas:
     cpuThresholdPercentage: 90
     disableAutoScaling: true

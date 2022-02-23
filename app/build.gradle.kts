@@ -25,12 +25,12 @@ dependencies {
 
     implementation("no.nav.aap.avro:vedtak:1.1.10")
 
-    runtimeOnly("com.h2database:h2:2.1.210")
+    runtimeOnly("org.postgresql:postgresql:42.3.1")
     implementation("org.flywaydb:flyway-core:8.5.0")
     implementation("org.jetbrains.exposed:exposed-java-time:0.37.3")
     implementation("org.jetbrains.exposed:exposed-jdbc:0.37.3")
-    implementation("org.jetbrains.exposed:exposed-dao:0.37.3")
 
+    testRuntimeOnly("com.h2database:h2:2.1.210")
     testImplementation(kotlin("test"))
     testImplementation("org.apache.kafka:kafka-streams-test-utils:3.1.0")
     testImplementation("io.ktor:ktor-server-test-host:1.6.7")

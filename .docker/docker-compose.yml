@@ -1,0 +1,23 @@
+# RUN SINGLE SERVICE
+# docker-compose -f .docker/docker-compose.yml up aap-sink-db -d
+
+services:
+
+  aap-sink:
+    build:
+      context: ..
+    depends_on: [ aap-sink-db ]
+    restart: on-failure
+    expose: [ 8080 ]
+
+  aap-sink-db:
+    image: postgres
+    container_name: aap-sink-db
+    ports: [ 5432:5432 ]
+    volumes: [ postgres_volume:/data/postgres ]
+    environment:
+      POSTGRES_PASSWORD: Welcome01
+      PGDATA: /data/postgres
+
+volumes:
+  postgres_volume:

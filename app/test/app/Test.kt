@@ -19,6 +19,7 @@ import org.junit.jupiter.api.Test
 import uk.org.webcompere.systemstubs.environment.EnvironmentVariables
 import java.time.LocalDate
 import java.util.*
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertTrue
 
@@ -32,14 +33,17 @@ internal class Test {
                 defaultSøker()
             }
 
-            val topic = Topic(loadConfig<Config>().kafka)
             val søker = awaitDatabase {
-                Repo.search("123", topic)
+                Repo.search("123")
             }
 
             assertNotNull(søker)
             assertTrue(søker.size == 1)
-            println(søker)
+
+            val topic = Topic(loadConfig<Config>().kafka)
+            val avro = topic.avroSerde.deserializer().deserialize(topic.name, søker.single())
+            assertNotNull(avro)
+            assertEquals("123", avro.personident)
         }
     }
 
@@ -93,6 +97,9 @@ fun <T> awaitDatabase(timeoutMs: Long = 1_000, query: suspend () -> T?): T? = ru
 
 fun <R> withTestApp(test: TestApplicationEngine.(mocks: Mocks) -> R): R = Mocks().use { mocks ->
     val externalConfig = mapOf(
+        "H2_URL" to "jdbc:h2:mem:test;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE",
+        "DB_USERNAME" to "sa",
+        "DB_PASSWORD" to "",
         "KAFKA_STREAMS_APPLICATION_ID" to "sink",
         "KAFKA_BROKERS" to "mock://kafka",
         "KAFKA_TRUSTSTORE_PATH" to "",
@@ -120,7 +127,7 @@ class Mocks : AutoCloseable {
     override fun close() {
         transaction {
             exec("SET REFERENTIAL_INTEGRITY FALSE")
-            exec("TRUNCATE TABLE SOKERE")
+            exec("TRUNCATE TABLE søker")
             exec("SET REFERENTIAL_INTEGRITY TRUE")
         }
     }

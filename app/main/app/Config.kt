@@ -21,16 +21,8 @@ import org.apache.kafka.streams.processor.LogAndSkipOnInvalidTimestamp
 import org.slf4j.LoggerFactory
 import java.util.*
 
-data class Config(
-    val database: DatabaseConfig,
-    val kafka: KafkaConfig,
-)
-
-data class DatabaseConfig(
-    val url: String,
-    val username: String,
-    val password: String
-)
+data class Config(val database: DatabaseConfig, val kafka: KafkaConfig)
+data class DatabaseConfig(val url: String, val username: String, val password: String, val h2Url: String)
 
 private val log = LoggerFactory.getLogger("app")
 
