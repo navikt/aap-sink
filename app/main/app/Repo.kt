@@ -9,6 +9,7 @@ import org.jetbrains.exposed.sql.statements.StatementContext
 import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.jetbrains.exposed.sql.transactions.transaction
 import org.slf4j.LoggerFactory
 
 object Repo {
@@ -21,9 +22,14 @@ object Repo {
     }
 
     fun connect(config: DatabaseConfig) {
-        val url = config.h2Url.ifBlank { config.url }
-        Database.connect(url = url, user = config.username, password = config.password)
-        Flyway.configure().dataSource(url, config.username, config.password).load().migrate()
+        if (config.h2Url.isNotBlank()) {
+            log.warn("Using H2")
+            Database.connect(url = config.h2Url, user = config.username, password = config.password)
+            transaction { SchemaUtils.create(SøkerTable) }
+        } else {
+            Database.connect(url = config.url, user = config.username, password = config.password)
+            Flyway.configure().dataSource(config.url, config.username, config.password).load().migrate()
+        }
     }
 
     suspend fun save(personident: String, søker: ByteArray) = newSuspendedTransaction(Dispatchers.IO) {
