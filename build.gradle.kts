@@ -8,6 +8,7 @@ subprojects {
         maven("https://github-package-registry-mirror.gc.nav.no/cached/maven-release")
         maven("https://packages.confluent.io/maven/") {
             content {
+                excludeGroup("org.apache.kafka")
                 includeGroup("io.confluent")
             }
         }
