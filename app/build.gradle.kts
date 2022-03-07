@@ -20,7 +20,7 @@ dependencies {
         exclude("org.apache.kafka", "kafka-clients")
     }
 
-    runtimeOnly("ch.qos.logback:logback-classic:1.2.10")
+    runtimeOnly("ch.qos.logback:logback-classic:1.2.11")
     runtimeOnly("net.logstash.logback:logstash-logback-encoder:7.0.1")
 
     implementation("no.nav.aap.avro:vedtak:1.1.10")
