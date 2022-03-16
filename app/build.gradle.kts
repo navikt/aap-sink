@@ -9,7 +9,7 @@ plugins {
 dependencies {
     implementation("io.ktor:ktor-server-netty:1.6.7")
 
-    implementation("io.ktor:ktor-metrics-micrometer:1.6.7")
+    implementation("io.ktor:ktor-metrics-micrometer:1.6.8")
     implementation("io.micrometer:micrometer-registry-prometheus:1.8.3")
 
     implementation("com.sksamuel.hoplite:hoplite-yaml:1.4.16")
