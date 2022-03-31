@@ -15,7 +15,7 @@ dependencies {
     implementation("com.sksamuel.hoplite:hoplite-yaml:1.4.16")
 
     implementation("org.apache.kafka:kafka-clients:3.1.0")
-    implementation("org.apache.kafka:kafka-streams:3.1.0")
+    implementation("org.apache.kafka:kafka-streams:5.5.8-ce")
     implementation("io.confluent:kafka-streams-avro-serde:7.0.1") {
         exclude("org.apache.kafka", "kafka-clients")
     }
