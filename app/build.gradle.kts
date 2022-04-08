@@ -26,7 +26,7 @@ dependencies {
     implementation("no.nav.aap.avro:vedtak:1.1.10")
 
     runtimeOnly("org.postgresql:postgresql:42.3.3")
-    implementation("org.flywaydb:flyway-core:8.5.1")
+    implementation("org.flywaydb:flyway-core:8.5.7")
     implementation("org.jetbrains.exposed:exposed-java-time:0.37.3")
     implementation("org.jetbrains.exposed:exposed-jdbc:0.37.3")
 
