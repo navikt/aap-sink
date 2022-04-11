@@ -33,7 +33,7 @@ dependencies {
     testRuntimeOnly("com.h2database:h2:2.1.210")
     testImplementation(kotlin("test"))
     testImplementation("org.apache.kafka:kafka-streams-test-utils:3.1.0")
-    testImplementation("io.ktor:ktor-server-test-host:1.6.7")
+    testImplementation("io.ktor:ktor-server-test-host:2.0.0")
     testImplementation("uk.org.webcompere:system-stubs-jupiter:2.0.1")
 }
 
