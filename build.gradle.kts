@@ -32,7 +32,7 @@ subprojects {
     configurations.all {
         resolutionStrategy {
             force(
-                "org.apache.kafka:kafka-clients:3.1.0",
+                "org.apache.kafka:kafka-clients:5.5.8-ce",
                 "org.rocksdb:rocksdbjni:6.29.4.1"
             )
         }
