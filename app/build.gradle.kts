@@ -29,9 +29,6 @@ dependencies {
     testImplementation(kotlin("test"))
     testImplementation("com.github.navikt.aap-libs:kafka-test:0.0.43")
     testImplementation("io.ktor:ktor-server-test-host:2.0.1")
-    testImplementation("uk.org.webcompere:system-stubs-jupiter:2.0.1")
-//    testRuntimeOnly("com.h2database:h2:2.1.212")
     testImplementation("org.testcontainers:postgresql:1.17.1")
-//    testRuntimeOnly("org.testcontainers:postgresql:1.17.1")
-
+    testImplementation("uk.org.webcompere:system-stubs-jupiter:2.0.1")
 }
