@@ -1,17 +1,13 @@
 database:
-  h2-url: ${H2_URL:-}
-  url: jdbc:postgresql://${DB_HOST:-localhost}:${DB_PORT:-5432}/${DB_DATABASE:-postgres}
-  username: ${DB_USERNAME:-postgres}
-  password: ${DB_PASSWORD:-Welcome01}
+  url: jdbc:postgresql://${DB_HOST}:${DB_PORT}/${DB_DATABASE}
+  username: ${DB_USERNAME}
+  password: ${DB_PASSWORD}
 
 kafka:
-  application-id: ${KAFKA_STREAMS_APPLICATION_ID:-sink}
-  brokers: ${KAFKA_BROKERS:-localhost:9092}
-  security: ${KAFKA_SECURITY_ENABLED:-false}
-  truststorePath: ${KAFKA_TRUSTSTORE_PATH:-}
-  keystorePath: ${KAFKA_KEYSTORE_PATH:-}
-  credstorePsw: ${KAFKA_CREDSTORE_PASSWORD:-}
-  clientId: ${KAFKA_CLIENT_ID:-sink}
-  schema-registry-url: ${KAFKA_SCHEMA_REGISTRY:-http://localhost:8085}
-  schema-registry-user: ${KAFKA_SCHEMA_REGISTRY_USER:-}
-  schema-registry-pwd: ${KAFKA_SCHEMA_REGISTRY_PASSWORD:-}
+  application-id: ${KAFKA_STREAMS_APPLICATION_ID}
+  brokers: ${KAFKA_BROKERS}
+  security: ${KAFKA_SECURITY_ENABLED}
+  truststorePath: ${KAFKA_TRUSTSTORE_PATH}
+  keystorePath: ${KAFKA_KEYSTORE_PATH}
+  credstorePsw: ${KAFKA_CREDSTORE_PASSWORD}
+  clientId: ${KAFKA_CLIENT_ID}
