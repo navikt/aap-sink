@@ -30,5 +30,4 @@ dependencies {
     testImplementation("com.github.navikt.aap-libs:kafka-test:0.0.43")
     testImplementation("io.ktor:ktor-server-test-host:2.0.1")
     testImplementation("org.testcontainers:postgresql:1.17.1")
-    testImplementation("uk.org.webcompere:system-stubs-jupiter:2.0.1")
 }
