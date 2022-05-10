@@ -21,8 +21,8 @@ object Repo {
     }
 
     fun connect(config: DatabaseConfig) {
-        Flyway.configure().dataSource(config.url, config.username, config.password).load().migrate()
         Database.connect(url = config.url, user = config.username, password = config.password)
+        Flyway.configure().dataSource(config.url, config.username, config.password).load().migrate()
     }
 
     suspend fun save(personident: String, søker: ByteArray) = newSuspendedTransaction(Dispatchers.IO) {

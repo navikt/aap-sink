@@ -11,6 +11,7 @@
     <logger name="io.confluent.kafka.serializers" level="WARN"/>
     <logger name="org.apache.zookeeper" level="WARN"/>
     <logger name="org.apache.kafka" level="WARN" additivity="false"/>
+    <logger name="org.testcontainers.utility.RyukResourceReaper" level="WARN" additivity="false"/>
 
     <root level="INFO">
         <appender-ref ref="pretty"/>

@@ -1,5 +1,9 @@
 package app
 
+import io.ktor.client.request.*
+import io.ktor.client.statement.*
+import io.ktor.http.*
+import io.ktor.server.config.*
 import io.ktor.server.testing.*
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.channelFlow
@@ -12,34 +16,57 @@ import org.apache.kafka.streams.TestInputTopic
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.junit.jupiter.api.Test
 import org.testcontainers.containers.PostgreSQLContainer
-import uk.org.webcompere.systemstubs.environment.EnvironmentVariables
+import org.testcontainers.containers.startupcheck.MinimumDurationRunningStartupCheckStrategy
 import java.time.Duration
+import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
-import kotlin.test.assertTrue
 
 internal class AppTest {
 
     @Test
     fun `store records in database`() {
         Mocks().use { mocks ->
-            EnvironmentVariables(containerProperties(mocks)).execute {
-                testApplication {
-                    application {
-                        app(mocks.kafka).also {
-                            val søkere = mocks.kafka.inputTopic(Topics.søkere)
+            testApplication {
+                environment { config = mocks.applicationConfig() }
+                application {
+                    app(mocks.kafka).also {
+                        val søkereTopic = mocks.kafka.inputTopic(Topics.søkere)
+                        val testSerde = JsonSerde.jackson<TestSøker>()
 
-                            søkere.produce("123") {
-                                JsonSerde.jackson<TestSøker>().serializer().serialize(Topics.søkere.name, TestSøker())
-                            }
-
-                            val søker = awaitDatabase {
-                                Repo.search("123")
-                            }
-
-                            assertNotNull(søker)
-                            assertTrue(søker.size == 1)
+                        søkereTopic.produce("123") {
+                            testSerde.serializer().serialize(Topics.søkere.name, TestSøker())
                         }
+
+                        val søkere = awaitDatabase {
+                            Repo.search("123")
+                        }
+
+                        assertNotNull(søkere)
+                        val søker = testSerde.deserializer().deserialize(Topics.søkere.name, søkere.single())
+                        assertEquals(TestSøker(), søker)
                     }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `actuators available`() {
+        Mocks().use { mocks ->
+            testApplication {
+                environment { config = mocks.applicationConfig() }
+                application { app(mocks.kafka) }
+
+                runBlocking {
+                    val live = client.get("/actuator/live")
+                    assertEquals(HttpStatusCode.OK, live.status)
+
+                    val ready = client.get("/actuator/ready")
+                    assertEquals(HttpStatusCode.OK, ready.status)
+
+                    val metrics = client.get("/actuator/metrics")
+                    assertEquals(HttpStatusCode.OK, metrics.status)
+                    assertNotNull(metrics.bodyAsText())
                 }
             }
         }
@@ -64,29 +91,32 @@ private fun <T> awaitDatabase(timeoutMs: Long = 1_000, query: suspend () -> T?):
     }
 }
 
-private fun containerProperties(mocks: Mocks) = mapOf(
-    "DB_HOST" to mocks.postgres.host,
-    "DB_PORT" to mocks.postgres.firstMappedPort.toString(),
-    "DB_DATABASE" to mocks.postgres.databaseName,
-    "DB_USERNAME" to mocks.postgres.username,
-    "DB_PASSWORD" to mocks.postgres.password,
-    "KAFKA_STREAMS_APPLICATION_ID" to "sink",
-    "KAFKA_BROKERS" to "mock://kafka",
-    "KAFKA_TRUSTSTORE_PATH" to "",
-    "KAFKA_SECURITY_ENABLED" to "false",
-    "KAFKA_KEYSTORE_PATH" to "",
-    "KAFKA_CREDSTORE_PASSWORD" to "",
-    "KAFKA_CLIENT_ID" to "sink",
-)
-
 class Mocks : AutoCloseable {
-    val kafka = KafkaStreamsMock()
-    val postgres = PostgreSQLContainer<Nothing>("postgres:14")
+    private val postgres = PostgreSQLContainer<Nothing>("postgres:14").apply {
+        // DB connection is not ready before approximately 2 seconds.
+        withStartupCheckStrategy(MinimumDurationRunningStartupCheckStrategy(Duration.ofSeconds(2)))
+    }
 
     init {
-        postgres.withStartupTimeout(Duration.ofSeconds(2))
         postgres.start()
     }
+
+    val kafka = KafkaStreamsMock()
+
+    fun applicationConfig() = MapApplicationConfig(
+        "DB_HOST" to postgres.host,
+        "DB_PORT" to postgres.firstMappedPort.toString(),
+        "DB_DATABASE" to postgres.databaseName,
+        "DB_USERNAME" to postgres.username,
+        "DB_PASSWORD" to postgres.password,
+        "KAFKA_STREAMS_APPLICATION_ID" to "sink",
+        "KAFKA_BROKERS" to "mock://kafka",
+        "KAFKA_TRUSTSTORE_PATH" to "",
+        "KAFKA_SECURITY_ENABLED" to "false",
+        "KAFKA_KEYSTORE_PATH" to "",
+        "KAFKA_CREDSTORE_PASSWORD" to "",
+        "KAFKA_CLIENT_ID" to "sink",
+    )
 
     override fun close() {
         postgres.close()
