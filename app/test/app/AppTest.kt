@@ -93,12 +93,8 @@ private fun <T> awaitDatabase(timeoutMs: Long = 1_000, query: suspend () -> T?):
 
 class Mocks : AutoCloseable {
     private val postgres = PostgreSQLContainer<Nothing>("postgres:14").apply {
-        // DB connection is not ready before approximately 2 seconds.
         withStartupCheckStrategy(MinimumDurationRunningStartupCheckStrategy(Duration.ofSeconds(2)))
-    }
-
-    init {
-        postgres.start()
+        start()
     }
 
     val kafka = KafkaStreamsMock()
