@@ -13,7 +13,7 @@ dependencies {
 
     implementation("io.ktor:ktor-serialization-jackson:2.0.1")
 
-    implementation("io.micrometer:micrometer-registry-prometheus:1.8.5")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.9.0")
 
     implementation("com.github.navikt.aap-libs:ktor-utils:0.0.43")
     implementation("com.github.navikt.aap-libs:kafka:0.0.43")
