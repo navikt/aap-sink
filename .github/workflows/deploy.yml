@@ -24,7 +24,7 @@ jobs:
           java-version: 18
           distribution: 'temurin'
 
-      - uses: gradle/gradle-build-action@v2.1.3
+      - uses: gradle/gradle-build-action@v2.1.6
         with:
           arguments: test app:shadowJar --continue --no-daemon
           # Gradle build cache increases over time. Exclude if cache is too large
