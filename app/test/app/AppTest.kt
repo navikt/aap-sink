@@ -46,16 +46,6 @@ internal class AppTest {
                         assertEquals(TestSøker(), søker)
                     }
                 }
-            }
-        }
-    }
-
-    @Test
-    fun `actuators available`() {
-        Mocks().use { mocks ->
-            testApplication {
-                environment { config = mocks.applicationConfig() }
-                application { app(mocks.kafka) }
 
                 runBlocking {
                     val live = client.get("/actuator/live")
@@ -111,7 +101,6 @@ class Mocks : AutoCloseable {
         "KAFKA_SECURITY_ENABLED" to "false",
         "KAFKA_KEYSTORE_PATH" to "",
         "KAFKA_CREDSTORE_PASSWORD" to "",
-        "KAFKA_CLIENT_ID" to "sink",
     )
 
     override fun close() {
