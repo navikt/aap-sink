@@ -16,6 +16,8 @@ spec:
         databases:
           - name: aap-sink-db
             envVarPrefix: DB
+  secureLogs:
+    enabled: true
   replicas:
     cpuThresholdPercentage: 90
     disableAutoScaling: true
