@@ -10,6 +10,7 @@ import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.slf4j.LoggerFactory
+import java.sql.ResultSet
 
 object Repo {
     private val secureLog = LoggerFactory.getLogger("secureLog")
@@ -25,11 +26,11 @@ object Repo {
         Flyway.configure().dataSource(config.url, config.username, config.password).load().migrate()
     }
 
-    suspend fun save(personident: String, søker: ByteArray) = newSuspendedTransaction(Dispatchers.IO) {
+    suspend fun save(dao: DaoRecord) = newSuspendedTransaction(Dispatchers.IO) {
         addLogger(SqlInfoLogger)
 
-        SøkerTable.insert { it.setValues(personident, søker) }.also {
-            secureLog.info("inserted row with id ${it[SøkerTable.id]} personident $personident")
+        SøkerTable.insert { it.setValues(dao) }.also {
+            secureLog.info("inserted row with id ${it[SøkerTable.id]} personident ${dao.personident}")
         }
     }
 
@@ -41,9 +42,15 @@ object Repo {
             .map { it[SøkerTable.record].toByteArray() }
     }
 
-    private fun InsertStatement<Number>.setValues(personident: String, søker: ByteArray) {
-        this[SøkerTable.personident] = personident
-        this[SøkerTable.record] = søker.decodeToString()
+    private fun InsertStatement<Number>.setValues(dao: DaoRecord) {
+        this[SøkerTable.personident] = dao.personident
+        this[SøkerTable.record] = dao.record
+        this[SøkerTable.partition] = dao.partition
+        this[SøkerTable.offset] = dao.offset
+        this[SøkerTable.topic] = dao.topic
+        this[SøkerTable.timestamp] = dao.timestamp
+        this[SøkerTable.streamTimeMs] = dao.streamTimeMs
+        this[SøkerTable.systemTimeMs] = dao.systemTimeMs
     }
 }
 
@@ -51,4 +58,10 @@ object SøkerTable : Table() {
     val id = long("id").autoIncrement()
     val personident = varchar("personident", 11)
     val record = text("record")
+    val partition = integer("kafka_partition")
+    val offset = long("kafka_offset")
+    val topic = varchar("kafka_topic", 50)
+    val timestamp = long("kafka_timestamp_ms")
+    val streamTimeMs = long("kafka_stream_time_ms")
+    val systemTimeMs = long("kafka_system_time_ms")
 }

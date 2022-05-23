@@ -15,6 +15,9 @@ import no.nav.aap.kafka.streams.KafkaStreams
 import no.nav.aap.kafka.streams.consume
 import no.nav.aap.ktor.config.loadConfig
 import org.apache.kafka.streams.kstream.Branched
+import org.apache.kafka.streams.kstream.ValueTransformerWithKey
+import org.apache.kafka.streams.kstream.ValueTransformerWithKeySupplier
+import org.apache.kafka.streams.processor.ProcessorContext
 import org.slf4j.LoggerFactory
 
 fun main() {
@@ -63,9 +66,39 @@ private fun <V> logDeleted() = Branched.withConsumer<String, V> { streams ->
 }
 
 private fun saveRecord() = Branched.withConsumer<String, ByteArray> { streams ->
-    streams.foreach { personident, søker ->
-        runBlocking {
-            Repo.save(personident, søker)
+    streams.transformValues(ValueTransformerWithKeySupplier { RecordWithMetadataTransformer() })
+        .foreach { _, dao ->
+            runBlocking {
+                Repo.save(dao)
+            }
         }
-    }
+}
+
+data class DaoRecord(
+    val personident: String,
+    val record: String,
+    val partition: Int,
+    val offset: Long,
+    val topic: String,
+    val timestamp: Long,
+    val systemTimeMs: Long,
+    val streamTimeMs: Long,
+)
+
+class RecordWithMetadataTransformer : ValueTransformerWithKey<String, ByteArray, DaoRecord> {
+    private lateinit var context: ProcessorContext
+
+    override fun init(processorContext: ProcessorContext) = let { context = processorContext }
+    override fun close() {}
+
+    override fun transform(key: String, value: ByteArray) = DaoRecord(
+        personident = key,
+        record = value.decodeToString(),
+        partition = context.partition(),
+        offset = context.offset(),
+        topic = context.topic(),
+        timestamp = context.timestamp(),
+        systemTimeMs = context.currentSystemTimeMs(),
+        streamTimeMs = context.currentStreamTimeMs(),
+    )
 }
