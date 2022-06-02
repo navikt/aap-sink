@@ -27,7 +27,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-jdbc:0.38.2")
 
     testImplementation(kotlin("test"))
-    testImplementation("com.github.navikt.aap-libs:kafka-test:0.0.43")
+    testImplementation("com.github.navikt.aap-libs:kafka-test:0.1.8")
     testImplementation("io.ktor:ktor-server-test-host:2.0.1")
     testImplementation("org.testcontainers:postgresql:1.17.1")
 }
