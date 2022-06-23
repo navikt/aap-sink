@@ -1,7 +1,7 @@
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
-    kotlin("jvm") version "1.6.21"
+    kotlin("jvm") version "1.7.0"
     id("com.github.johnrengelman.shadow") version "7.1.2" apply false
 }
 
@@ -32,8 +32,7 @@ subprojects {
     configurations.all {
         resolutionStrategy {
             force(
-                "org.apache.kafka:kafka-clients:3.1.0",
-                "org.rocksdb:rocksdbjni:6.29.4.1"
+                "org.apache.kafka:kafka-clients:3.2.0",
             )
         }
     }

@@ -14,6 +14,7 @@ import no.nav.aap.kafka.streams.KStreams
 import no.nav.aap.kafka.streams.KafkaStreams
 import no.nav.aap.kafka.streams.consume
 import no.nav.aap.ktor.config.loadConfig
+import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.kstream.ValueTransformerWithKey
 import org.apache.kafka.streams.kstream.ValueTransformerWithKeySupplier
 import org.apache.kafka.streams.processor.ProcessorContext
@@ -30,7 +31,7 @@ fun Application.app(kafka: KStreams = KafkaStreams) {
 
     Repo.connect(config.database)
 
-    kafka.start(config.kafka, prometheus) {
+    val topology = StreamsBuilder().apply {
         consume(Topics.søkere)
             .transformValues(ValueTransformerWithKeySupplier { RecordWithMetadataTransformer() })
             .foreach { _, dao ->
@@ -38,7 +39,9 @@ fun Application.app(kafka: KStreams = KafkaStreams) {
                     Repo.save(dao)
                 }
             }
-    }
+    }.build()
+
+    kafka.connect(config.kafka, prometheus, topology)
 
     Thread.currentThread().setUncaughtExceptionHandler { _, e -> log.error("Uhåndtert feil", e) }
     environment.monitor.subscribe(ApplicationStopping) { kafka.close() }
