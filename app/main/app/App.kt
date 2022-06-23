@@ -14,17 +14,13 @@ import no.nav.aap.kafka.streams.KStreams
 import no.nav.aap.kafka.streams.KafkaStreams
 import no.nav.aap.kafka.streams.consume
 import no.nav.aap.ktor.config.loadConfig
-import org.apache.kafka.streams.kstream.Branched
 import org.apache.kafka.streams.kstream.ValueTransformerWithKey
 import org.apache.kafka.streams.kstream.ValueTransformerWithKeySupplier
 import org.apache.kafka.streams.processor.ProcessorContext
-import org.slf4j.LoggerFactory
 
 fun main() {
     embeddedServer(Netty, port = 8080, module = Application::app).start(wait = true)
 }
-
-private val secureLog = LoggerFactory.getLogger("secureLog")
 
 fun Application.app(kafka: KStreams = KafkaStreams) {
     val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
@@ -36,9 +32,12 @@ fun Application.app(kafka: KStreams = KafkaStreams) {
 
     kafka.start(config.kafka, prometheus) {
         consume(Topics.søkere)
-            .split()
-            .branch({ _, value -> value == null }, logDeleted())
-            .defaultBranch(saveRecord())
+            .transformValues(ValueTransformerWithKeySupplier { RecordWithMetadataTransformer() })
+            .foreach { _, dao ->
+                runBlocking {
+                    Repo.save(dao)
+                }
+            }
     }
 
     Thread.currentThread().setUncaughtExceptionHandler { _, e -> log.error("Uhåndtert feil", e) }
@@ -61,19 +60,6 @@ fun Application.app(kafka: KStreams = KafkaStreams) {
     }
 }
 
-private fun <V> logDeleted() = Branched.withConsumer<String, V> { streams ->
-    streams.foreach { key, _ -> secureLog.info("found tombstone for personident $key") }
-}
-
-private fun saveRecord() = Branched.withConsumer<String, ByteArray> { streams ->
-    streams.transformValues(ValueTransformerWithKeySupplier { RecordWithMetadataTransformer() })
-        .foreach { _, dao ->
-            runBlocking {
-                Repo.save(dao)
-            }
-        }
-}
-
 data class DaoRecord(
     val personident: String,
     val record: String,
@@ -85,15 +71,15 @@ data class DaoRecord(
     val streamTimeMs: Long,
 )
 
-class RecordWithMetadataTransformer : ValueTransformerWithKey<String, ByteArray, DaoRecord> {
+class RecordWithMetadataTransformer : ValueTransformerWithKey<String, ByteArray?, DaoRecord> {
     private lateinit var context: ProcessorContext
 
     override fun init(processorContext: ProcessorContext) = let { context = processorContext }
     override fun close() {}
 
-    override fun transform(key: String, value: ByteArray) = DaoRecord(
+    override fun transform(key: String, value: ByteArray?) = DaoRecord(
         personident = key,
-        record = value.decodeToString(),
+        record = value?.decodeToString() ?: "tombstone",
         partition = context.partition(),
         offset = context.offset(),
         topic = context.topic(),

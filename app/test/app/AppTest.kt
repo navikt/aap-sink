@@ -13,6 +13,7 @@ import kotlinx.coroutines.withTimeoutOrNull
 import no.nav.aap.kafka.serde.json.JsonSerde
 import no.nav.aap.kafka.streams.test.KafkaStreamsMock
 import org.apache.kafka.streams.TestInputTopic
+import org.apache.kafka.streams.test.TestRecord
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.junit.jupiter.api.Test
 import org.testcontainers.containers.PostgreSQLContainer
@@ -57,6 +58,34 @@ internal class AppTest {
                     val metrics = client.get("/actuator/metrics")
                     assertEquals(HttpStatusCode.OK, metrics.status)
                     assertNotNull(metrics.bodyAsText())
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `save tombstones in database`() {
+        Mocks().use { mocks ->
+            testApplication {
+                environment { config = mocks.applicationConfig() }
+                application {
+                    app(mocks.kafka).also {
+                        val søkereTopic = mocks.kafka.inputTopic(Topics.søkere)
+                        val testSerde = JsonSerde.jackson<TestSøker>()
+
+                        søkereTopic.produce("123") {
+                            testSerde.serializer().serialize(Topics.søkere.name, TestSøker())
+                        }
+
+                        søkereTopic.tombstone("123")
+
+                        val søkere = awaitDatabase {
+                            Repo.search("123")
+                        }
+
+                        requireNotNull(søkere) { "søker 123 skal ligger i datbase" }
+                        assertEquals(2, søkere.size)
+                    }
                 }
             }
         }
@@ -109,3 +138,4 @@ class Mocks : AutoCloseable {
 }
 
 inline fun <reified V : Any> TestInputTopic<String, V>.produce(key: String, value: () -> V) = pipeInput(key, value())
+private fun <V> TestInputTopic<String, V>.tombstone(key: String) = pipeInput(TestRecord(key, null))
