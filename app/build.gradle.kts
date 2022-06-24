@@ -15,7 +15,7 @@ dependencies {
 
     implementation("io.micrometer:micrometer-registry-prometheus:1.9.0")
 
-    implementation("com.github.navikt.aap-libs:ktor-utils:2.0.6")
+    implementation("com.github.navikt.aap-libs:ktor-utils:2.0.10")
     implementation("com.github.navikt.aap-libs:kafka:2.0.6")
 
     runtimeOnly("ch.qos.logback:logback-classic:1.2.11")
