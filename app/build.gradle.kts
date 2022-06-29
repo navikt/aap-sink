@@ -19,7 +19,7 @@ dependencies {
     implementation("com.github.navikt.aap-libs:kafka:2.1.3")
 
     runtimeOnly("ch.qos.logback:logback-classic:1.2.11")
-    runtimeOnly("net.logstash.logback:logstash-logback-encoder:7.2")
+    implementation("net.logstash.logback:logstash-logback-encoder:7.2")
 
     runtimeOnly("org.postgresql:postgresql:42.3.6")
     implementation("org.flywaydb:flyway-core:8.5.12")

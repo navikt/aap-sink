@@ -1,11 +1,14 @@
 package app
 
 import kotlinx.coroutines.Dispatchers
+import net.logstash.logback.argument.StructuredArgument
+import net.logstash.logback.argument.StructuredArguments.kv
 import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.sql.*
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.statements.InsertStatement
 import org.jetbrains.exposed.sql.statements.StatementContext
+import org.jetbrains.exposed.sql.statements.StatementType
 import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -13,12 +16,6 @@ import org.slf4j.LoggerFactory
 
 object Repo {
     private val secureLog = LoggerFactory.getLogger("secureLog")
-
-    private object SqlInfoLogger : SqlLogger {
-        override fun log(context: StatementContext, transaction: Transaction) {
-            secureLog.info(context.expandArgs(TransactionManager.current()))
-        }
-    }
 
     fun connect(config: DatabaseConfig) {
         Database.connect(url = config.url, user = config.username, password = config.password)
@@ -28,16 +25,14 @@ object Repo {
     suspend fun save(dao: DaoRecord) = newSuspendedTransaction(Dispatchers.IO) {
         addLogger(SqlInfoLogger)
 
-        SøkerTable.insert { it.setValues(dao) }.also {
-            secureLog.info("inserted row with id ${it[SøkerTable.id]} personident ${dao.personident}")
-        }
+        SøkerTable.insert { it.setValues(dao) }
     }
 
     suspend fun search(personident: String): List<DaoRecord> = newSuspendedTransaction(Dispatchers.IO) {
         addLogger(SqlInfoLogger)
 
-        SøkerTable.select(SøkerTable.personident eq personident)
-            .onEach { secureLog.info("found row with id ${it[SøkerTable.id]} personident $personident") }
+        SøkerTable
+            .select(SøkerTable.personident eq personident)
             .map {
                 DaoRecord(
                     personident = it[SøkerTable.personident],
@@ -63,6 +58,27 @@ object Repo {
         this[SøkerTable.timestamp] = dao.timestamp
         this[SøkerTable.streamTimeMs] = dao.streamTimeMs
         this[SøkerTable.systemTimeMs] = dao.systemTimeMs
+    }
+
+    private object SqlInfoLogger : SqlLogger {
+        override fun log(context: StatementContext, transaction: Transaction) {
+
+            secureLog.trace(
+                context.expandArgs(TransactionManager.current()),
+                context.kvPersonident(),
+            )
+        }
+
+        private fun StatementContext.kvPersonident(): StructuredArgument? {
+            val personident = if (statement.targets.any { it == SøkerTable }) {
+                when (statement.type) {
+                    StatementType.INSERT -> (statement as? InsertStatement<*>)?.getOrNull(SøkerTable.personident)
+                    else -> null
+                }
+            } else null
+
+            return personident?.let { kv("personident", it) }
+        }
     }
 }
 
