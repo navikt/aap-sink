@@ -15,77 +15,147 @@ import no.nav.aap.kafka.streams.test.KafkaStreamsMock
 import org.apache.kafka.streams.TestInputTopic
 import org.apache.kafka.streams.test.TestRecord
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
+import org.junit.jupiter.api.AfterAll
+import org.junit.jupiter.api.BeforeAll
 import org.junit.jupiter.api.Test
+import org.junit.jupiter.api.TestInstance
 import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.startupcheck.MinimumDurationRunningStartupCheckStrategy
 import java.time.Duration
+import kotlin.random.Random
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
+import kotlin.test.assertNull
 
+@TestInstance(TestInstance.Lifecycle.PER_CLASS)
 internal class AppTest {
+    private lateinit var mocks: Mocks
+
+    @BeforeAll
+    fun setupMocks() {
+        mocks = Mocks()
+    }
+
+    @AfterAll
+    fun closeMocks() {
+        mocks.close()
+    }
 
     @Test
-    fun `store records in database`() {
-        Mocks().use { mocks ->
-            testApplication {
-                environment { config = mocks.applicationConfig() }
-                application {
-                    app(mocks.kafka).also {
-                        val søkereTopic = mocks.kafka.inputTopic(Topics.søkere)
-                        val testSerde = JsonSerde.jackson<TestSøker>()
+    fun `can save records in database`() {
+        testApplication {
+            environment { config = mocks.applicationConfig() }
+            application {
+                app(mocks.kafka).also {
+                    val søkereTopic = mocks.kafka.inputTopic(Topics.søkere)
+                    val testSerde = JsonSerde.jackson<TestSøker>()
 
-                        søkereTopic.produce("123") {
-                            testSerde.serializer().serialize(Topics.søkere.name, TestSøker())
-                        }
+                    val personident = Random.nextInt(Integer.MAX_VALUE).toString()
 
-                        val søkere = awaitDatabase {
-                            Repo.search("123")
-                        }
-
-                        assertNotNull(søkere)
-                        val søker = testSerde.deserializer().deserialize(Topics.søkere.name, søkere.single())
-                        assertEquals(TestSøker(), søker)
+                    søkereTopic.produce(personident) {
+                        testSerde.serializer().serialize(Topics.søkere.name, TestSøker(personident))
                     }
+
+                    val søker = awaitDatabase {
+                        Repo.search(personident)
+                    }?.singleOrNull()
+
+                    assertNotNull(søker)
+
+                    val dto = testSerde.deserializer().deserialize(Topics.søkere.name, søker.record.toByteArray())
+                    assertEquals(TestSøker(personident), dto)
                 }
+            }
 
-                runBlocking {
-                    val live = client.get("/actuator/live")
-                    assertEquals(HttpStatusCode.OK, live.status)
+            runBlocking {
+                val live = client.get("/actuator/live")
+                assertEquals(HttpStatusCode.OK, live.status)
 
-                    val ready = client.get("/actuator/ready")
-                    assertEquals(HttpStatusCode.OK, ready.status)
+                val ready = client.get("/actuator/ready")
+                assertEquals(HttpStatusCode.OK, ready.status)
 
-                    val metrics = client.get("/actuator/metrics")
-                    assertEquals(HttpStatusCode.OK, metrics.status)
-                    assertNotNull(metrics.bodyAsText())
+                val metrics = client.get("/actuator/metrics")
+                assertEquals(HttpStatusCode.OK, metrics.status)
+                assertNotNull(metrics.bodyAsText())
+            }
+        }
+    }
+
+    @Test
+    fun `can save tombstones in database`() {
+        testApplication {
+            environment { config = mocks.applicationConfig() }
+            application {
+                app(mocks.kafka).also {
+                    val søkereTopic = mocks.kafka.inputTopic(Topics.søkere)
+                    val testSerde = JsonSerde.jackson<TestSøker>()
+
+                    val personident = Random.nextInt(Integer.MAX_VALUE).toString()
+
+                    søkereTopic.produce(personident) {
+                        testSerde.serializer().serialize(Topics.søkere.name, TestSøker(personident))
+                    }
+
+                    søkereTopic.tombstone(personident)
+
+                    val søkere = awaitDatabase {
+                        Repo.search(personident)
+                    }
+
+                    requireNotNull(søkere) { "søker $personident skal ligger i datbase" }
+                    assertEquals(2, søkere.size)
                 }
             }
         }
     }
 
     @Test
-    fun `save tombstones in database`() {
-        Mocks().use { mocks ->
-            testApplication {
-                environment { config = mocks.applicationConfig() }
-                application {
-                    app(mocks.kafka).also {
-                        val søkereTopic = mocks.kafka.inputTopic(Topics.søkere)
-                        val testSerde = JsonSerde.jackson<TestSøker>()
+    fun `can save dto without version`() {
+        testApplication {
+            environment { config = mocks.applicationConfig() }
+            application {
+                app(mocks.kafka).also {
+                    val søkereTopic = mocks.kafka.inputTopic(Topics.søkere)
+                    val testSerde = JsonSerde.jackson<TestSøker>()
 
-                        søkereTopic.produce("123") {
-                            testSerde.serializer().serialize(Topics.søkere.name, TestSøker())
-                        }
+                    val personident = Random.nextInt(Integer.MAX_VALUE).toString()
 
-                        søkereTopic.tombstone("123")
-
-                        val søkere = awaitDatabase {
-                            Repo.search("123")
-                        }
-
-                        requireNotNull(søkere) { "søker 123 skal ligger i datbase" }
-                        assertEquals(2, søkere.size)
+                    søkereTopic.produce(personident) {
+                        testSerde.serializer().serialize(Topics.søkere.name, TestSøker(personident))
                     }
+
+                    val søker = awaitDatabase {
+                        Repo.search(personident)
+                    }?.singleOrNull()
+
+                    requireNotNull(søker) { "søker $personident skal ligger i datbase" }
+                    assertNull(søker.dtoVersion)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `can save dto with version`() {
+        testApplication {
+            environment { config = mocks.applicationConfig() }
+            application {
+                app(mocks.kafka).also {
+                    val søkereTopic = mocks.kafka.inputTopic(Topics.søkere)
+                    val testSerde = JsonSerde.jackson<VersionedTestSøker>()
+
+                    val personident = Random.nextInt(Integer.MAX_VALUE).toString()
+
+                    søkereTopic.produce(personident) {
+                        testSerde.serializer().serialize(Topics.søkere.name, VersionedTestSøker(personident))
+                    }
+
+                    val søker = awaitDatabase {
+                        Repo.search(personident)
+                    }?.singleOrNull()
+
+                    requireNotNull(søker) { "søker $personident skal ligger i datbase" }
+                    assertEquals(2, søker.dtoVersion)
                 }
             }
         }
@@ -93,8 +163,14 @@ internal class AppTest {
 }
 
 private data class TestSøker(
-    val personident: String = "123",
+    val personident: String,
     val status: String = "Mottatt",
+)
+
+private data class VersionedTestSøker(
+    val personident: String,
+    val status: String = "Mottatt",
+    val version: Int = 2,
 )
 
 private fun <T> awaitDatabase(timeoutMs: Long = 1_000, query: suspend () -> T?): T? = runBlocking {

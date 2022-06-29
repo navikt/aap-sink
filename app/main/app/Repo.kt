@@ -10,7 +10,6 @@ import org.jetbrains.exposed.sql.statements.expandArgs
 import org.jetbrains.exposed.sql.transactions.TransactionManager
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.slf4j.LoggerFactory
-import java.sql.ResultSet
 
 object Repo {
     private val secureLog = LoggerFactory.getLogger("secureLog")
@@ -34,17 +33,30 @@ object Repo {
         }
     }
 
-    suspend fun search(personident: String): List<ByteArray> = newSuspendedTransaction(Dispatchers.IO) {
+    suspend fun search(personident: String): List<DaoRecord> = newSuspendedTransaction(Dispatchers.IO) {
         addLogger(SqlInfoLogger)
 
         SøkerTable.select(SøkerTable.personident eq personident)
             .onEach { secureLog.info("found row with id ${it[SøkerTable.id]} personident $personident") }
-            .map { it[SøkerTable.record].toByteArray() }
+            .map {
+                DaoRecord(
+                    personident = it[SøkerTable.personident],
+                    record = it[SøkerTable.record],
+                    dtoVersion = it[SøkerTable.dtoVersion],
+                    partition = it[SøkerTable.partition],
+                    offset = it[SøkerTable.offset],
+                    topic = it[SøkerTable.topic],
+                    timestamp = it[SøkerTable.timestamp],
+                    systemTimeMs = it[SøkerTable.systemTimeMs],
+                    streamTimeMs = it[SøkerTable.streamTimeMs],
+                )
+            }
     }
 
     private fun InsertStatement<Number>.setValues(dao: DaoRecord) {
         this[SøkerTable.personident] = dao.personident
         this[SøkerTable.record] = dao.record
+        this[SøkerTable.dtoVersion] = dao.dtoVersion
         this[SøkerTable.partition] = dao.partition
         this[SøkerTable.offset] = dao.offset
         this[SøkerTable.topic] = dao.topic
@@ -58,6 +70,7 @@ object SøkerTable : Table() {
     val id = long("id").autoIncrement()
     val personident = varchar("personident", 11)
     val record = text("record")
+    val dtoVersion = integer("dto_version").nullable()
     val partition = integer("kafka_partition")
     val offset = long("kafka_offset")
     val topic = varchar("kafka_topic", 50)

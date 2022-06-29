@@ -15,8 +15,8 @@ dependencies {
 
     implementation("io.micrometer:micrometer-registry-prometheus:1.9.0")
 
-    implementation("com.github.navikt.aap-libs:ktor-utils:2.0.6")
-    implementation("com.github.navikt.aap-libs:kafka:2.0.6")
+    implementation("com.github.navikt.aap-libs:ktor-utils:2.1.3")
+    implementation("com.github.navikt.aap-libs:kafka:2.1.3")
 
     runtimeOnly("ch.qos.logback:logback-classic:1.2.11")
     runtimeOnly("net.logstash.logback:logstash-logback-encoder:7.2")
@@ -27,7 +27,7 @@ dependencies {
     implementation("org.jetbrains.exposed:exposed-jdbc:0.38.2")
 
     testImplementation(kotlin("test"))
-    testImplementation("com.github.navikt.aap-libs:kafka-test:2.0.6")
+    testImplementation("com.github.navikt.aap-libs:kafka-test:2.1.3")
     testImplementation("io.ktor:ktor-server-test-host:2.0.2")
     testImplementation("org.testcontainers:postgresql:1.17.2")
 }

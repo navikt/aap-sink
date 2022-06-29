@@ -1,5 +1,7 @@
 package app
 
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -12,7 +14,7 @@ import io.micrometer.prometheus.PrometheusMeterRegistry
 import kotlinx.coroutines.runBlocking
 import no.nav.aap.kafka.streams.KStreams
 import no.nav.aap.kafka.streams.KafkaStreams
-import no.nav.aap.kafka.streams.consume
+import no.nav.aap.kafka.streams.extension.consume
 import no.nav.aap.ktor.config.loadConfig
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.kstream.ValueTransformerWithKey
@@ -66,6 +68,7 @@ fun Application.app(kafka: KStreams = KafkaStreams) {
 data class DaoRecord(
     val personident: String,
     val record: String,
+    val dtoVersion: Int?,
     val partition: Int,
     val offset: Long,
     val topic: String,
@@ -75,19 +78,30 @@ data class DaoRecord(
 )
 
 class RecordWithMetadataTransformer : ValueTransformerWithKey<String, ByteArray?, DaoRecord> {
+    private val jackson: ObjectMapper = jacksonObjectMapper()
+
     private lateinit var context: ProcessorContext
 
     override fun init(processorContext: ProcessorContext) = let { context = processorContext }
     override fun close() {}
 
-    override fun transform(key: String, value: ByteArray?) = DaoRecord(
-        personident = key,
-        record = value?.decodeToString() ?: "tombstone",
-        partition = context.partition(),
-        offset = context.offset(),
-        topic = context.topic(),
-        timestamp = context.timestamp(),
-        systemTimeMs = context.currentSystemTimeMs(),
-        streamTimeMs = context.currentStreamTimeMs(),
-    )
+    override fun transform(key: String, value: ByteArray?): DaoRecord {
+        val version: Int? = value
+            ?.let(jackson::readTree)
+            ?.get("version")
+            ?.takeUnless { it.isNull }
+            ?.intValue()
+
+        return DaoRecord(
+            personident = key,
+            record = value?.decodeToString() ?: "tombstone",
+            dtoVersion = version,
+            partition = context.partition(),
+            offset = context.offset(),
+            topic = context.topic(),
+            timestamp = context.timestamp(),
+            systemTimeMs = context.currentSystemTimeMs(),
+            streamTimeMs = context.currentStreamTimeMs(),
+        )
+    }
 }

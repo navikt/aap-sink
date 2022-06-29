@@ -1,10 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-    <appender name="pretty" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder>
-            <pattern>%cyan(%d{HH:mm:ss.SSS}) %gray([%thread]) %highlight(%-5level) %magenta(%logger{36}) - %msg%n
-            </pattern>
-        </encoder>
+
+    <appender name="json" class="ch.qos.logback.core.ConsoleAppender">
+        <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
     </appender>
 
     <appender name="secureLog" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -20,26 +18,25 @@
         <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
     </appender>
 
-    <appender name="json" class="ch.qos.logback.core.ConsoleAppender">
-        <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
-    </appender>
-
-    <logger name="app" level="TRACE" additivity="false">
-        <appender-ref ref="${LOG_APPENDER:-pretty}"/>
+    <logger name="kafka" level="WARN" additivity="false">
+        <appender-ref ref="json"/>
+    </logger>
+    <logger name="io.confluent.kafka.serializers" level="WARN" additivity="false">
+        <appender-ref ref="json"/>
+    </logger>
+    <logger name="org.apache.zookeeper" level="WARN" additivity="false">
+        <appender-ref ref="json"/>
+    </logger>
+    <logger name="org.apache.kafka" level="WARN" additivity="false">
+        <appender-ref ref="json"/>
     </logger>
 
-    <logger name="secureLog" level="INFO" additivity="false">
+    <logger name="secureLog" level="TRACE" additivity="false">
         <appender-ref ref="secureLog"/>
     </logger>
 
-    <logger name="kafka" level="WARN"/>
-    <logger name="io.confluent.kafka.serializers" level="WARN"/>
-    <logger name="org.apache.zookeeper" level="WARN"/>
-    <logger name="org.apache.kafka" level="WARN" additivity="false">
-        <appender-ref ref="${LOG_APPENDER:-pretty}"/>
-    </logger>
-
-    <root level="${LOG_LEVEL:-INFO}">
-        <appender-ref ref="${LOG_APPENDER:-pretty}"/>
+    <root level="INFO">
+        <appender-ref ref="json"/>
     </root>
+
 </configuration>

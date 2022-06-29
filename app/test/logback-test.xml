@@ -7,13 +7,27 @@
         </encoder>
     </appender>
 
-    <logger name="kafka" level="WARN"/>
-    <logger name="io.confluent.kafka.serializers" level="WARN"/>
-    <logger name="org.apache.zookeeper" level="WARN"/>
-    <logger name="org.apache.kafka" level="WARN" additivity="false"/>
+    <logger name="kafka" level="WARN" additivity="false">
+        <appender-ref ref="json"/>
+    </logger>
+    <logger name="io.confluent.kafka.serializers" level="WARN" additivity="false">
+        <appender-ref ref="json"/>
+    </logger>
+    <logger name="org.apache.zookeeper" level="WARN" additivity="false">
+        <appender-ref ref="json"/>
+    </logger>
+    <logger name="org.apache.kafka" level="WARN" additivity="false">
+        <appender-ref ref="json"/>
+    </logger>
+
     <logger name="org.testcontainers.utility.RyukResourceReaper" level="WARN" additivity="false"/>
+
+    <logger name="secureLog" level="TRACE" additivity="false">
+        <appender-ref ref="json"/>
+    </logger>
 
     <root level="INFO">
         <appender-ref ref="pretty"/>
     </root>
+
 </configuration>

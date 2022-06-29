@@ -43,9 +43,3 @@ spec:
   prometheus:
     enabled: true
     path: /actuator/metrics
-
-  env:
-    - name: LOG_APPENDER
-      value: json
-    - name: KAFKA_SECURITY_ENABLED
-      value: "true"
