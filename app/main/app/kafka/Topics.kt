@@ -1,4 +1,4 @@
-package app
+package app.kafka
 
 import no.nav.aap.kafka.streams.Topic
 import org.apache.kafka.common.serialization.Serdes.ByteArraySerde
