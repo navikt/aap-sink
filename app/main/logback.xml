@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <configuration>
-
     <appender name="json" class="ch.qos.logback.core.ConsoleAppender">
         <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
     </appender>
@@ -17,19 +16,6 @@
         </triggeringPolicy>
         <encoder class="net.logstash.logback.encoder.LogstashEncoder"/>
     </appender>
-
-    <logger name="kafka" level="WARN" additivity="false">
-        <appender-ref ref="json"/>
-    </logger>
-    <logger name="io.confluent.kafka.serializers" level="WARN" additivity="false">
-        <appender-ref ref="json"/>
-    </logger>
-    <logger name="org.apache.zookeeper" level="WARN" additivity="false">
-        <appender-ref ref="json"/>
-    </logger>
-    <logger name="org.apache.kafka" level="WARN" additivity="false">
-        <appender-ref ref="json"/>
-    </logger>
 
     <logger name="secureLog" level="TRACE" additivity="false">
         <appender-ref ref="secureLog"/>
