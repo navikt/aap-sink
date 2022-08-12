@@ -8,7 +8,7 @@ application {
 }
 
 dependencies {
-    implementation("io.ktor:ktor-server-netty:2.0.2")
+    implementation("io.ktor:ktor-server-netty:2.1.0")
     implementation("io.ktor:ktor-server-metrics-micrometer:2.0.2")
 
     implementation("io.ktor:ktor-serialization-jackson:2.0.2")
