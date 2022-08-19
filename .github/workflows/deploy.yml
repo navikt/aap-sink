@@ -42,6 +42,7 @@ jobs:
           docker push ghcr.io/${{ github.repository }} --all-tags
 
   deploy:
+    needs: [ build ]
     strategy:
       matrix:
         name: [ app.yml ]
