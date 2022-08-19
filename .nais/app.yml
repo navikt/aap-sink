@@ -6,7 +6,7 @@ metadata:
   labels:
     team: aap
   annotations:
-    github.url: "https://github.com/navikt/aap-api"
+    github.url: "https://github.com/navikt/aap-sink"
 spec:
   image: {{image}}
   kafka:
