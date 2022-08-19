@@ -190,7 +190,7 @@ private fun <T> awaitDatabase(timeoutMs: Long = 1_000, query: suspend () -> T?):
 
 class Mocks : AutoCloseable {
     private val postgres = PostgreSQLContainer<Nothing>("postgres:14").apply {
-        withStartupCheckStrategy(MinimumDurationRunningStartupCheckStrategy(Duration.ofSeconds(2)))
+        withStartupCheckStrategy(MinimumDurationRunningStartupCheckStrategy(Duration.ofSeconds(5)))
         start()
     }
 
