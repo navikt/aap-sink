@@ -1,61 +1,66 @@
-name: Deploy
+name: Deploy Sink
 
 on:
   push:
-    branches:
-      - main
+    branches: [ main ]
 
 env:
   IMAGE: ghcr.io/${{ github.repository }}:${{ github.sha }}
 
 jobs:
   build:
-    name: Build & Deploy
+    name: Build & Test
     runs-on: ubuntu-latest
     steps:
-      - name: Cancel Previous Runs
-        uses: styfle/cancel-workflow-action@0.9.1
-        with:
-          access_token: ${{ secrets.GITHUB_TOKEN }}
-
-      - uses: actions/checkout@v2
-      - uses: actions/setup-java@v2
+      - uses: styfle/cancel-workflow-action@0.10.0
+      - uses: actions/checkout@v3
+      - uses: actions/setup-java@v3.4.1
         with:
           java-version: 18
           distribution: 'temurin'
 
-      - uses: gradle/gradle-build-action@v2.1.3
+      - uses: gradle/gradle-build-action@v2.2.2
         with:
-          arguments: test app:shadowJar --continue --no-daemon
-          # Gradle build cache increases over time. Exclude if cache is too large
-#          gradle-home-cache-excludes: |
-#            caches/build-cache-1
-        env:
-          GRADLE_BUILD_ACTION_CACHE_DEBUG_ENABLED: true
+          arguments: test api:buildFatJar --continue --no-daemon --configuration-cache
 
       - uses: dorny/test-reporter@v1.5.0
         if: success() || failure()
         with:
-          name: 🧬 Test results
+          name: Test Result
           path: "**/build/test-results/test/TEST-*.xml"
           reporter: java-junit
           token: ${{ secrets.GITHUB_TOKEN }}
 
-      - uses: docker/login-action@v1
+      - uses: docker/login-action@v2
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Bygg, tag og push Docker image
-        run: |
+      - run: |
           docker build --pull --tag ${{ env.IMAGE }} --tag ghcr.io/${{ github.repository }}:latest .
           docker push ghcr.io/${{ github.repository }} --all-tags
 
-      - uses: nais/deploy/actions/deploy@v1
+  deploy:
+    strategy:
+      matrix:
+        name: [ app.yml ]
+        cluster: [ dev-gcp, prod-gcp ]
+        include:
+          - cluster: dev-gcp
+            vars: dev.yml
+          - cluster: prod-gcp
+            vars: prod.yml
+
+    name: Deploy (${{ matrix.cluster }})
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Deploy ${{ matrix.name }} to ${{ matrix.cluster }}
+        uses: nais/deploy/actions/deploy@v1
         env:
-          PRINT_PAYLOAD: true
           APIKEY: ${{ secrets.NAIS_DEPLOY_APIKEY }}
-          CLUSTER: dev-gcp
-          RESOURCE: .nais/app.yml
-          VARS: .nais/dev.yml
+          CLUSTER: ${{ matrix.cluster }}
+          RESOURCE: .nais/${{ matrix.name }}
+          VARS: .nais/${{ matrix.vars }}
+          PRINT_PAYLOAD: true

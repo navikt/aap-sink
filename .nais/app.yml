@@ -5,10 +5,12 @@ metadata:
   namespace: aap
   labels:
     team: aap
+  annotations:
+    github.url: "https://github.com/navikt/aap-api"
 spec:
   image: {{image}}
   kafka:
-    pool: {{kafka-pool}}
+    pool: {{kafka.pool}}
     streams: true
   gcp:
     sqlInstances:

@@ -1,10 +1,8 @@
 package app
 
 import app.exposed.Repo
-import app.exposed.SøkerDao
-import app.kafka.RecordWithMetadataTransformer
 import app.kafka.Topics
-import app.kafka.toSøkerDao
+import app.kafka.toSøkerDaoWithRecordMetadata
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -20,7 +18,6 @@ import no.nav.aap.kafka.streams.extension.consume
 import no.nav.aap.ktor.config.loadConfig
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.Topology
-import org.apache.kafka.streams.kstream.ValueTransformerWithKeySupplier
 
 fun main() {
     embeddedServer(Netty, port = 8080, module = Application::app).start(wait = true)
@@ -43,11 +40,15 @@ fun Application.app(kafka: KStreams = KafkaStreams) {
     }
 }
 
-fun topology(): Topology = StreamsBuilder().apply {
-    consume(Topics.søkere)
-        .transformValues(ValueTransformerWithKeySupplier { RecordWithMetadataTransformer<SøkerDao>(toSøkerDao()) })
+fun topology(): Topology {
+    val builder = StreamsBuilder()
+
+    builder.consume(Topics.søkere)
+        .transformValues(toSøkerDaoWithRecordMetadata())
         .foreach { _, dao -> Repo.save(dao) }
-}.build()
+
+    return builder.build()
+}
 
 fun Route.actuators(prometheus: PrometheusMeterRegistry, kafka: KStreams) {
     route("/actuator") {

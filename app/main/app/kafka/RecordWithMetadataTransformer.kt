@@ -4,6 +4,7 @@ import app.exposed.SøkerDao
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.kafka.streams.kstream.ValueTransformerWithKey
+import org.apache.kafka.streams.kstream.ValueTransformerWithKeySupplier
 import org.apache.kafka.streams.processor.ProcessorContext
 
 typealias TransformDao<T> = (String, String, Int?, ProcessorContext) -> T
@@ -26,6 +27,10 @@ class RecordWithMetadataTransformer<T>(
     }
 
     override fun close() {}
+}
+
+fun toSøkerDaoWithRecordMetadata() = ValueTransformerWithKeySupplier {
+    RecordWithMetadataTransformer<SøkerDao>(toSøkerDao())
 }
 
 fun toSøkerDao(): TransformDao<SøkerDao> = { key, record, version, metadata ->

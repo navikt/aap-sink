@@ -1,1 +1,2 @@
-kafka-pool: nav-dev
+kafka:
+  pool: nav-dev
