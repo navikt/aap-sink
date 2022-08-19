@@ -18,7 +18,7 @@ dependencies {
     implementation("com.github.navikt.aap-libs:ktor-utils:$aapLibVersion")
     implementation("com.github.navikt.aap-libs:kafka:$aapLibVersion")
 
-    implementation("io.micrometer:micrometer-registry-prometheus:1.9.2")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.9.3")
     runtimeOnly("ch.qos.logback:logback-classic:1.2.11")
     implementation("net.logstash.logback:logstash-logback-encoder:7.2")
     runtimeOnly("org.postgresql:postgresql:42.3.6")
