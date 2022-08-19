@@ -9,6 +9,8 @@ import org.apache.kafka.streams.processor.ProcessorContext
 
 typealias TransformDao<T> = (String, String, Int?, ProcessorContext) -> T
 
+const val TOMBSTONE_VALUE = "tombstone"
+
 class RecordWithMetadataTransformer<T>(
     private val toDao: TransformDao<T>,
 ) : ValueTransformerWithKey<String, ByteArray?, T> {
@@ -22,7 +24,7 @@ class RecordWithMetadataTransformer<T>(
 
     override fun transform(key: String, value: ByteArray?): T {
         val version: Int? = value?.let(jackson::readTree)?.get("version")?.takeUnless { it.isNull }?.intValue()
-        val record = value?.decodeToString() ?: "tombstone"
+        val record = value?.decodeToString() ?: TOMBSTONE_VALUE
         return toDao(key, record, version, context)
     }
 

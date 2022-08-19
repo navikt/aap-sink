@@ -3,6 +3,7 @@ package app
 import app.exposed.Repo
 import app.kafka.Topics
 import app.kafka.toSøkerDaoWithRecordMetadata
+import app.routes.søker
 import io.ktor.http.*
 import io.ktor.server.application.*
 import io.ktor.server.engine.*
@@ -37,6 +38,7 @@ fun Application.app(kafka: KStreams = KafkaStreams) {
 
     routing {
         actuators(prometheus, kafka)
+        søker()
     }
 }
 
@@ -57,11 +59,11 @@ fun Route.actuators(prometheus: PrometheusMeterRegistry, kafka: KStreams) {
         }
         get("/live") {
             val status = if (kafka.isLive()) HttpStatusCode.OK else HttpStatusCode.InternalServerError
-            call.respond(status, "vedtak")
+            call.respond(status, "sink")
         }
         get("/ready") {
             val status = if (kafka.isReady()) HttpStatusCode.OK else HttpStatusCode.InternalServerError
-            call.respond(status, "vedtak")
+            call.respond(status, "sink")
         }
     }
 }

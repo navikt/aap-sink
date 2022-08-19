@@ -2,6 +2,8 @@ package app
 
 import app.exposed.Repo
 import app.kafka.Topics
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
@@ -158,6 +160,35 @@ internal class AppTest {
 
                     requireNotNull(søker) { "søker $personident skal ligger i datbase" }
                     assertEquals(2, søker.dtoVersion)
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `can find last by timstamp`() {
+        testApplication {
+            environment { config = mocks.applicationConfig() }
+            application {
+                app(mocks.kafka).also {
+                    val søkereTopic = mocks.kafka.inputTopic(Topics.søkere)
+                    val testSerde = JsonSerde.jackson<TestSøker>()
+
+                    val personident = Random.nextInt(Integer.MAX_VALUE).toString()
+
+                    søkereTopic.produce(personident) {
+                        testSerde.serializer().serialize(Topics.søkere.name, TestSøker(personident))
+                    }
+
+                    val søker = awaitDatabase {
+                        Repo.lastBy(personident) { it.timestamp }
+                    }
+
+                    requireNotNull(søker) { "søker $personident skal ligger i datbase" }
+
+                    val expected = TestSøker(personident)
+                    val actual = jacksonObjectMapper().readValue<TestSøker>(søker.record)
+                    assertEquals(expected, actual)
                 }
             }
         }

@@ -26,6 +26,17 @@ object Repo {
             .select(SøkerTable.personident eq personident)
             .map(::toDaoRecord)
     }
+
+    fun lastBy(personident: String, column: (SøkerTable) -> Expression<*>): SøkerDao = transaction {
+        addLogger(SqlTraceLogger)
+
+        SøkerTable
+            .select(SøkerTable.personident eq personident)
+            .orderBy(column(SøkerTable), SortOrder.DESC)
+            .limit(1)
+            .map(::toDaoRecord)
+            .single()
+    }
 }
 
 private fun toDaoRecord(rs: ResultRow): SøkerDao = SøkerDao(
