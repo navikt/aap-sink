@@ -1,12 +1,16 @@
 package app
 
 import app.exposed.Repo
+import app.exposed.SøkerDao
 import app.kafka.Topics
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import io.ktor.client.call.*
+import io.ktor.client.plugins.contentnegotiation.*
 import io.ktor.client.request.*
 import io.ktor.client.statement.*
 import io.ktor.http.*
+import io.ktor.serialization.jackson.*
 import io.ktor.server.config.*
 import io.ktor.server.testing.*
 import kotlinx.coroutines.Dispatchers
@@ -191,6 +195,30 @@ internal class AppTest {
                     assertEquals(expected, actual)
                 }
             }
+        }
+    }
+
+    @Test
+    fun `søker route respond lastest søker by personident`() {
+        testApplication {
+            environment { config = mocks.applicationConfig() }
+            application {
+                app(mocks.kafka).also {
+                    val søkereTopic = mocks.kafka.inputTopic(Topics.søkere)
+                    val serializer = JsonSerde.jackson<TestSøker>().serializer()
+                    val ident = "1234"
+                    søkereTopic.produce(ident) { serializer.serialize(Topics.søkere.name, TestSøker(ident)) }
+                }
+            }
+
+            val client = createClient { install(ContentNegotiation) { jackson() } }
+            val søkerDao = client
+                .get("søker/1234/latest") { contentType(ContentType.Application.Json) }
+                .body<SøkerDao>()
+
+            val expected = TestSøker("1234")
+            val actual = jacksonObjectMapper().readValue<TestSøker>(søkerDao.record)
+            assertEquals(expected, actual)
         }
     }
 }

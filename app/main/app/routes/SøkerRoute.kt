@@ -8,7 +8,7 @@ import io.ktor.server.routing.*
 import io.ktor.server.util.*
 
 fun Route.søker() {
-    route("/søker/{personident}/last") {
+    route("/søker/{personident}/latest") {
         get {
             val personident = call.parameters.getOrFail("personident")
 
