@@ -213,7 +213,7 @@ internal class AppTest {
 
             val client = createClient { install(ContentNegotiation) { jackson() } }
             val søkerDao = client
-                .get("søker/1234/latest") { contentType(ContentType.Application.Json) }
+                .get("soker/1234/latest") { contentType(ContentType.Application.Json) }
                 .body<SøkerDao>()
 
             val expected = TestSøker("1234")
