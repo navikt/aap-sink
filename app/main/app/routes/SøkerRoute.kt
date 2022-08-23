@@ -1,6 +1,5 @@
 package app.routes
 
-import app.exposed.Repo
 import app.exposed.SøkerDao
 import io.ktor.server.application.*
 import io.ktor.server.response.*
@@ -12,9 +11,9 @@ fun Route.søker() {
         get {
             val personident = call.parameters.getOrFail("personident")
 
-            val søker: SøkerDao = Repo.lastBy(personident) { it.timestamp }
+//            val søker: SøkerDao = Repo.lastBy(personident) { it.timestamp }
 
-            call.respond(søker)
+            call.respond(SøkerDao(personident, "", null, 0, 0, "", 0, 0, 0))
         }
     }
 }

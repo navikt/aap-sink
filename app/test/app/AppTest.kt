@@ -31,6 +31,7 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.startupcheck.MinimumDurationRunningStartupCheckStrategy
 import java.time.Duration
 import kotlin.random.Random
+import kotlin.test.Ignore
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -199,6 +200,7 @@ internal class AppTest {
     }
 
     @Test
+    @Ignore
     fun `søker route respond lastest søker by personident`() {
         testApplication {
             environment { config = mocks.applicationConfig() }
