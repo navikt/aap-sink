@@ -1,8 +1,8 @@
-package app.exposed
+package app.vedtak
 
 import org.jetbrains.exposed.sql.Table
 
-object SøkerTable : Table() {
+object VedtakTable : Table() {
     val id = long("id").autoIncrement()
     val personident = varchar("personident", 11)
     val record = text("record")

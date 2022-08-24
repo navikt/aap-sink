@@ -1,5 +1,7 @@
 package app.exposed
 
+import app.søker.SøkerTable
+import app.vedtak.VedtakTable
 import net.logstash.logback.argument.StructuredArgument
 import net.logstash.logback.argument.StructuredArguments
 import org.jetbrains.exposed.sql.SqlLogger
@@ -22,12 +24,15 @@ object SqlTraceLogger : SqlLogger {
     }
 
     private fun StatementContext.kvPersonident(): StructuredArgument? {
-        val personident = if (statement.targets.any { it == SøkerTable }) {
-            when (statement.type) {
-                StatementType.INSERT -> (statement as? InsertStatement<*>)?.getOrNull(SøkerTable.personident)
-                else -> null
-            }
-        } else null
+        if (statement.type != StatementType.INSERT) return null
+
+        val table = statement.targets.groupBy { it }.keys.single()
+        val insertStatement = statement as? InsertStatement<*>
+        val personident = when (table) {
+            SøkerTable -> insertStatement?.getOrNull(SøkerTable.personident)
+            VedtakTable -> insertStatement?.getOrNull(VedtakTable.personident)
+            else -> null
+        }
 
         return personident?.let { StructuredArguments.kv("personident", it) }
     }

@@ -1,8 +1,9 @@
 package app
 
-import app.exposed.Repo
-import app.exposed.SøkerDao
 import app.kafka.Topics
+import app.søker.SøkerDao
+import app.søker.SøkerRepository
+import app.vedtak.VedtakDao
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.client.call.*
@@ -65,7 +66,7 @@ internal class AppTest {
                     }
 
                     val søker = awaitDatabase {
-                        Repo.search(personident)
+                        SøkerRepository.search(personident)
                     }?.singleOrNull()
 
                     assertNotNull(søker)
@@ -107,7 +108,7 @@ internal class AppTest {
                     søkereTopic.tombstone(personident)
 
                     val søkere = awaitDatabase {
-                        Repo.search(personident)
+                        SøkerRepository.search(personident)
                     }
 
                     requireNotNull(søkere) { "søker $personident skal ligger i datbase" }
@@ -133,7 +134,7 @@ internal class AppTest {
                     }
 
                     val søker = awaitDatabase {
-                        Repo.search(personident)
+                        SøkerRepository.search(personident)
                     }?.singleOrNull()
 
                     requireNotNull(søker) { "søker $personident skal ligger i datbase" }
@@ -159,7 +160,7 @@ internal class AppTest {
                     }
 
                     val søker = awaitDatabase {
-                        Repo.search(personident)
+                        SøkerRepository.search(personident)
                     }?.singleOrNull()
 
                     requireNotNull(søker) { "søker $personident skal ligger i datbase" }
@@ -185,7 +186,7 @@ internal class AppTest {
                     }
 
                     val søker = awaitDatabase {
-                        Repo.lastBy(personident) { it.timestamp }
+                        SøkerRepository.lastBy(personident) { it.timestamp }
                     }
 
                     requireNotNull(søker) { "søker $personident skal ligger i datbase" }
@@ -221,11 +222,40 @@ internal class AppTest {
             assertEquals(expected, actual)
         }
     }
+
+    @Test
+    fun `vedtak route respond lastest vedtak by personident`() {
+        testApplication {
+            environment { config = mocks.applicationConfig() }
+            application {
+                app(mocks.kafka).also {
+                    val vedtakTopic = mocks.kafka.inputTopic(Topics.vedtak)
+                    val serializer = JsonSerde.jackson<TestVedtak>().serializer()
+                    val ident = "1234"
+                    vedtakTopic.produce(ident) { serializer.serialize(Topics.vedtak.name, TestVedtak(ident)) }
+                }
+            }
+
+            val client = createClient { install(ContentNegotiation) { jackson() } }
+            val vedtakDao = client
+                .get("vedtak/1234/latest") { contentType(ContentType.Application.Json) }
+                .body<VedtakDao>()
+
+            val expected = TestVedtak("1234")
+            val actual = jacksonObjectMapper().readValue<TestVedtak>(vedtakDao.record)
+            assertEquals(expected, actual)
+        }
+    }
 }
 
 private data class TestSøker(
     val personident: String,
     val status: String = "Mottatt",
+)
+
+private data class TestVedtak(
+    val personident: String,
+    val status: String = "Innvilget",
 )
 
 private data class VersionedTestSøker(

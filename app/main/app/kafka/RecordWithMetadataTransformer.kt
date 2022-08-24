@@ -1,6 +1,7 @@
 package app.kafka
 
-import app.exposed.SøkerDao
+import app.søker.SøkerDao
+import app.vedtak.VedtakDao
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.kafka.streams.kstream.ValueTransformerWithKey
@@ -32,19 +33,9 @@ class RecordWithMetadataTransformer<T>(
 }
 
 fun toSøkerDaoWithRecordMetadata() = ValueTransformerWithKeySupplier {
-    RecordWithMetadataTransformer<SøkerDao>(toSøkerDao())
+    RecordWithMetadataTransformer<SøkerDao>(SøkerDao.fromKafkaRecord())
 }
 
-fun toSøkerDao(): TransformDao<SøkerDao> = { key, record, version, metadata ->
-    SøkerDao(
-        personident = key,
-        record = record,
-        dtoVersion = version,
-        partition = metadata.partition(),
-        offset = metadata.offset(),
-        topic = metadata.topic(),
-        timestamp = metadata.timestamp(),
-        systemTimeMs = metadata.currentSystemTimeMs(),
-        streamTimeMs = metadata.currentStreamTimeMs(),
-    )
+fun toVedtakDaoWithRecordMetadata() = ValueTransformerWithKeySupplier {
+    RecordWithMetadataTransformer<VedtakDao>(VedtakDao.fromKafkaRecord())
 }

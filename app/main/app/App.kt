@@ -1,9 +1,12 @@
 package app
 
-import app.exposed.Repo
 import app.kafka.Topics
 import app.kafka.toSøkerDaoWithRecordMetadata
+import app.kafka.toVedtakDaoWithRecordMetadata
 import app.routes.søker
+import app.søker.SøkerRepository
+import app.vedtak.VedtakRepository
+import app.vedtak.vedtak
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import io.ktor.http.*
@@ -23,6 +26,8 @@ import no.nav.aap.kafka.streams.extension.consume
 import no.nav.aap.ktor.config.loadConfig
 import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.Topology
+import org.flywaydb.core.Flyway
+import org.jetbrains.exposed.sql.Database
 
 fun main() {
     embeddedServer(Netty, port = 8080, module = Application::app).start(wait = true)
@@ -40,8 +45,22 @@ fun Application.app(kafka: KStreams = KafkaStreams) {
 
     val config = loadConfig<Config>()
 
-    Repo.connect(config.database)
-    kafka.connect(config.kafka, prometheus, topology())
+    Database.connect(
+        url = config.database.url,
+        user = config.database.username,
+        password = config.database.password,
+    )
+
+    Flyway.configure()
+        .dataSource(config.database.url, config.database.username, config.database.password)
+        .load()
+        .migrate()
+
+    kafka.connect(
+        config = config.kafka,
+        registry = prometheus,
+        topology = topology(),
+    )
 
     Thread.currentThread().setUncaughtExceptionHandler { _, e -> log.error("Uhåndtert feil", e) }
     environment.monitor.subscribe(ApplicationStopping) { kafka.close() }
@@ -49,6 +68,7 @@ fun Application.app(kafka: KStreams = KafkaStreams) {
     routing {
         actuators(prometheus, kafka)
         søker()
+        vedtak()
     }
 }
 
@@ -57,7 +77,11 @@ fun topology(): Topology {
 
     builder.consume(Topics.søkere)
         .transformValues(toSøkerDaoWithRecordMetadata())
-        .foreach { _, dao -> Repo.save(dao) }
+        .foreach { _, dao -> SøkerRepository.save(dao) }
+
+    builder.consume(Topics.vedtak)
+        .transformValues(toVedtakDaoWithRecordMetadata())
+        .foreach { _, dao -> VedtakRepository.save(dao) }
 
     return builder.build()
 }
