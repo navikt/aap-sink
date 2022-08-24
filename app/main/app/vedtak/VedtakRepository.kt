@@ -31,6 +31,3 @@ object VedtakRepository {
             .single()
     }
 }
-
-
-
