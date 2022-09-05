@@ -1,0 +1,2 @@
+-- Set default grants to IAM users (for new tables as well)
+ALTER DEFAULT PRIVILEGES IN SCHEMA PUBLIC GRANT ALL ON TABLES TO CLOUDSQLIAMUSER;
