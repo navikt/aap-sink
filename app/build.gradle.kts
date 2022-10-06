@@ -26,7 +26,7 @@ dependencies {
     runtimeOnly("org.postgresql:postgresql:42.5.0")
     implementation("org.flywaydb:flyway-core:9.2.1")
     implementation("org.jetbrains.exposed:exposed-java-time:0.39.2")
-    implementation("org.jetbrains.exposed:exposed-jdbc:0.39.2")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.40.1")
 
     testImplementation("io.ktor:ktor-client-cio:$ktorVersion")
     testImplementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
