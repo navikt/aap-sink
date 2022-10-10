@@ -28,7 +28,7 @@ data class VedtakDao(
     }
 
     companion object {
-        fun toKafkaRecord(rs: ResultRow) = VedtakDao(
+        fun create(rs: ResultRow) = VedtakDao(
             personident = rs[VedtakTable.personident],
             record = rs[VedtakTable.record],
             dtoVersion = rs[VedtakTable.dtoVersion],
@@ -40,7 +40,7 @@ data class VedtakDao(
             streamTimeMs = rs[VedtakTable.streamTimeMs],
         )
 
-        fun fromKafkaRecord(): TransformDao<VedtakDao> = { key, record, version, metadata ->
+        fun transformFromRecord(): TransformDao<VedtakDao> = { key, record, version, metadata ->
             VedtakDao(
                 personident = key,
                 record = record,

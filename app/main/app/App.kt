@@ -1,12 +1,13 @@
 package app
 
+import app.kafka.MetadataTransformer
 import app.kafka.Topics
-import app.kafka.toSøkerDaoWithRecordMetadata
-import app.kafka.toVedtakDaoWithRecordMetadata
-import app.routes.søker
+import app.meldeplikt.MeldepliktDao
+import app.meldeplikt.MeldepliktRepo
+import app.søker.SøkerDao
 import app.søker.SøkerRepository
+import app.vedtak.VedtakDao
 import app.vedtak.VedtakRepository
-import app.vedtak.vedtak
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
 import io.ktor.http.*
@@ -67,8 +68,6 @@ fun Application.app(kafka: KStreams = KafkaStreams) {
 
     routing {
         actuators(prometheus, kafka)
-        søker()
-        vedtak()
     }
 }
 
@@ -76,12 +75,16 @@ fun topology(): Topology {
     val builder = StreamsBuilder()
 
     builder.consume(Topics.søkere)
-        .transformValues(toSøkerDaoWithRecordMetadata())
+        .transformValues(MetadataTransformer.enrich(SøkerDao::transformFromRecord))
         .foreach { _, dao -> SøkerRepository.save(dao) }
 
     builder.consume(Topics.vedtak)
-        .transformValues(toVedtakDaoWithRecordMetadata())
+        .transformValues(MetadataTransformer.enrich(VedtakDao::transformFromRecord))
         .foreach { _, dao -> VedtakRepository.save(dao) }
+
+    builder.consume(Topics.meldeplikt)
+        .transformValues(MetadataTransformer.enrich(MeldepliktDao::transformFromRecord))
+        .foreach { _, dao -> MeldepliktRepo.save(dao) }
 
     return builder.build()
 }

@@ -1,9 +1,7 @@
 package app
 
 import app.kafka.Topics
-import app.søker.SøkerDao
 import app.søker.SøkerRepository
-import app.vedtak.VedtakDao
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.client.call.*
@@ -199,53 +197,29 @@ internal class AppTest {
         }
     }
 
-    @Test
-    fun `søker route respond lastest søker by personident`() {
-        testApplication {
-            environment { config = mocks.applicationConfig() }
-            application {
-                app(mocks.kafka).also {
-                    val søkereTopic = mocks.kafka.inputTopic(Topics.søkere)
-                    val serializer = JsonSerde.jackson<TestSøker>().serializer()
-                    val ident = "1234"
-                    søkereTopic.produce(ident) { serializer.serialize(Topics.søkere.name, TestSøker(ident)) }
-                }
-            }
-
-            val client = createClient { install(ContentNegotiation) { jackson() } }
-            val søkerDao = client
-                .get("soker/1234/latest") { contentType(ContentType.Application.Json) }
-                .body<SøkerDao>()
-
-            val expected = TestSøker("1234")
-            val actual = jacksonObjectMapper().readValue<TestSøker>(søkerDao.record)
-            assertEquals(expected, actual)
-        }
-    }
-
-    @Test
-    fun `vedtak route respond lastest vedtak by personident`() {
-        testApplication {
-            environment { config = mocks.applicationConfig() }
-            application {
-                app(mocks.kafka).also {
-                    val vedtakTopic = mocks.kafka.inputTopic(Topics.vedtak)
-                    val serializer = JsonSerde.jackson<TestVedtak>().serializer()
-                    val ident = "1234"
-                    vedtakTopic.produce(ident) { serializer.serialize(Topics.vedtak.name, TestVedtak(ident)) }
-                }
-            }
-
-            val client = createClient { install(ContentNegotiation) { jackson() } }
-            val vedtakDao = client
-                .get("vedtak/1234/latest") { contentType(ContentType.Application.Json) }
-                .body<VedtakDao>()
-
-            val expected = TestVedtak("1234")
-            val actual = jacksonObjectMapper().readValue<TestVedtak>(vedtakDao.record)
-            assertEquals(expected, actual)
-        }
-    }
+//    @Test
+//    fun `søker route respond lastest søker by personident`() {
+//        testApplication {
+//            environment { config = mocks.applicationConfig() }
+//            application {
+//                app(mocks.kafka).also {
+//                    val søkereTopic = mocks.kafka.inputTopic(Topics.søkere)
+//                    val serializer = JsonSerde.jackson<TestSøker>().serializer()
+//                    val ident = "1234"
+//                    søkereTopic.produce(ident) { serializer.serialize(Topics.søkere.name, TestSøker(ident)) }
+//                }
+//            }
+//
+//            val client = createClient { install(ContentNegotiation) { jackson() } }
+//            val søkerDao = client
+//                .get("soker/1234/latest") { contentType(ContentType.Application.Json) }
+//                .body<SøkerDao>()
+//
+//            val expected = TestSøker("1234")
+//            val actual = jacksonObjectMapper().readValue<TestSøker>(søkerDao.record)
+//            assertEquals(expected, actual)
+//        }
+//    }
 }
 
 private data class TestSøker(

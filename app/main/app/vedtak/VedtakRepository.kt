@@ -17,7 +17,7 @@ object VedtakRepository {
 
         VedtakTable
             .select(VedtakTable.personident eq personident)
-            .map(VedtakDao.Companion::toKafkaRecord)
+            .map(VedtakDao::create)
     }
 
     fun lastBy(personident: String, column: (VedtakTable) -> Expression<*>): VedtakDao = transaction {
@@ -27,7 +27,7 @@ object VedtakRepository {
             .select(VedtakTable.personident eq personident)
             .orderBy(column(VedtakTable), SortOrder.DESC)
             .limit(1)
-            .map(VedtakDao.Companion::toKafkaRecord)
+            .map(VedtakDao::create)
             .single()
     }
 }

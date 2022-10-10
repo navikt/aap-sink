@@ -18,10 +18,6 @@ spec:
         databases:
           - name: aap-sink-db
             envVarPrefix: DB
-  accessPolicy:
-    inbound:
-      rules:
-        - application: api
   secureLogs:
     enabled: true
   replicas:

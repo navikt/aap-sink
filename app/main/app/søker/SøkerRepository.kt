@@ -17,7 +17,7 @@ object SøkerRepository {
 
         SøkerTable
             .select(SøkerTable.personident eq personident)
-            .map(SøkerDao.Companion::toKafkaRecord)
+            .map(SøkerDao.Companion::create)
     }
 
     fun lastBy(personident: String, column: (SøkerTable) -> Expression<*>): SøkerDao = transaction {
@@ -27,7 +27,7 @@ object SøkerRepository {
             .select(SøkerTable.personident eq personident)
             .orderBy(column(SøkerTable), SortOrder.DESC)
             .limit(1)
-            .map(SøkerDao.Companion::toKafkaRecord)
+            .map(SøkerDao.Companion::create)
             .single()
     }
 }

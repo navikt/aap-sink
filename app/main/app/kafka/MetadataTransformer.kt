@@ -1,7 +1,5 @@
 package app.kafka
 
-import app.søker.SøkerDao
-import app.vedtak.VedtakDao
 import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import org.apache.kafka.streams.kstream.ValueTransformerWithKey
@@ -12,7 +10,7 @@ typealias TransformDao<T> = (String, String, Int?, ProcessorContext) -> T
 
 const val TOMBSTONE_VALUE = "tombstone"
 
-class RecordWithMetadataTransformer<T>(
+internal class MetadataTransformer<T>(
     private val toDao: TransformDao<T>,
 ) : ValueTransformerWithKey<String, ByteArray?, T> {
     private val jackson: ObjectMapper = jacksonObjectMapper()
@@ -30,12 +28,10 @@ class RecordWithMetadataTransformer<T>(
     }
 
     override fun close() {}
-}
 
-fun toSøkerDaoWithRecordMetadata() = ValueTransformerWithKeySupplier {
-    RecordWithMetadataTransformer<SøkerDao>(SøkerDao.fromKafkaRecord())
-}
-
-fun toVedtakDaoWithRecordMetadata() = ValueTransformerWithKeySupplier {
-    RecordWithMetadataTransformer<VedtakDao>(VedtakDao.fromKafkaRecord())
+    companion object {
+        fun <T> enrich(transformer: () -> TransformDao<T>) = ValueTransformerWithKeySupplier {
+            MetadataTransformer<T>(transformer())
+        }
+    }
 }

@@ -28,19 +28,19 @@ data class SøkerDao(
     }
 
     companion object {
-        fun toKafkaRecord(rs: ResultRow) = SøkerDao(
-            personident = rs[SøkerTable.personident],
-            record = rs[SøkerTable.record],
-            dtoVersion = rs[SøkerTable.dtoVersion],
-            partition = rs[SøkerTable.partition],
-            offset = rs[SøkerTable.offset],
-            topic = rs[SøkerTable.topic],
-            timestamp = rs[SøkerTable.timestamp],
-            systemTimeMs = rs[SøkerTable.systemTimeMs],
-            streamTimeMs = rs[SøkerTable.streamTimeMs],
+        fun create(resRow: ResultRow) = SøkerDao(
+            personident = resRow[SøkerTable.personident],
+            record = resRow[SøkerTable.record],
+            dtoVersion = resRow[SøkerTable.dtoVersion],
+            partition = resRow[SøkerTable.partition],
+            offset = resRow[SøkerTable.offset],
+            topic = resRow[SøkerTable.topic],
+            timestamp = resRow[SøkerTable.timestamp],
+            systemTimeMs = resRow[SøkerTable.systemTimeMs],
+            streamTimeMs = resRow[SøkerTable.streamTimeMs],
         )
 
-        fun fromKafkaRecord(): TransformDao<SøkerDao> = { key, record, version, metadata ->
+        fun transformFromRecord(): TransformDao<SøkerDao> = { key, record, version, metadata ->
             SøkerDao(
                 personident = key,
                 record = record,
