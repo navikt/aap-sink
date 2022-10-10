@@ -1,7 +1,9 @@
 package app.meldeplikt
 
+import app.Dao
 import app.exposed.SqlTraceLogger
 import org.jetbrains.exposed.sql.Expression
+import org.jetbrains.exposed.sql.ResultRow
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.SqlExpressionBuilder.eq
 import org.jetbrains.exposed.sql.addLogger
@@ -11,28 +13,50 @@ import org.jetbrains.exposed.sql.transactions.transaction
 
 object MeldepliktRepo {
 
-    fun save(dao: MeldepliktDao) = transaction {
+    fun save(dao: Dao) = transaction {
         addLogger()
 
-        MeldepliktTable.insert { dao.toInsertStatement(it) }
+        MeldepliktTable.insert {
+            it[personident] = dao.personident
+            it[record] = dao.record
+            it[dtoVersion] = dao.dtoVersion
+            it[partition] = dao.partition
+            it[offset] = dao.offset
+            it[topic] = dao.topic
+            it[timestamp] = dao.timestamp
+            it[streamTimeMs] = dao.streamTimeMs
+            it[systemTimeMs] = dao.systemTimeMs
+        }
     }
 
-    fun searchBy(personident: String): List<MeldepliktDao> = transaction {
+    fun searchBy(personident: String): List<Dao> = transaction {
         addLogger(SqlTraceLogger)
 
         MeldepliktTable
             .select(MeldepliktTable.personident eq personident)
-            .map(MeldepliktDao::create)
+            .map(::toDao)
     }
 
-    fun lastBy(personident: String, column: (MeldepliktTable) -> Expression<*>): MeldepliktDao = transaction {
+    fun lastBy(personident: String, column: (MeldepliktTable) -> Expression<*>): Dao = transaction {
         addLogger(SqlTraceLogger)
 
         MeldepliktTable
             .select(MeldepliktTable.personident eq personident)
             .orderBy(column(MeldepliktTable), SortOrder.DESC)
             .limit(1)
-            .map(MeldepliktDao::create)
+            .map(::toDao)
             .single()
     }
+
+    private fun toDao(rs: ResultRow) = Dao(
+        personident = rs[MeldepliktTable.personident],
+        record = rs[MeldepliktTable.record],
+        dtoVersion = rs[MeldepliktTable.dtoVersion],
+        partition = rs[MeldepliktTable.partition],
+        offset = rs[MeldepliktTable.offset],
+        topic = rs[MeldepliktTable.topic],
+        timestamp = rs[MeldepliktTable.timestamp],
+        systemTimeMs = rs[MeldepliktTable.systemTimeMs],
+        streamTimeMs = rs[MeldepliktTable.streamTimeMs],
+    )
 }

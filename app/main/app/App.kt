@@ -1,12 +1,9 @@
 package app
 
-import app.kafka.MetadataTransformer
+import app.kafka.EnrichWithMetadata
 import app.kafka.Topics
-import app.meldeplikt.MeldepliktDao
 import app.meldeplikt.MeldepliktRepo
-import app.søker.SøkerDao
 import app.søker.SøkerRepository
-import app.vedtak.VedtakDao
 import app.vedtak.VedtakRepository
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
@@ -75,15 +72,15 @@ fun topology(): Topology {
     val builder = StreamsBuilder()
 
     builder.consume(Topics.søkere)
-        .transformValues(MetadataTransformer.enrich(SøkerDao::transformFromRecord))
+        .processValues({ EnrichWithMetadata() })
         .foreach { _, dao -> SøkerRepository.save(dao) }
 
     builder.consume(Topics.vedtak)
-        .transformValues(MetadataTransformer.enrich(VedtakDao::transformFromRecord))
+        .processValues({ EnrichWithMetadata() })
         .foreach { _, dao -> VedtakRepository.save(dao) }
 
     builder.consume(Topics.meldeplikt)
-        .transformValues(MetadataTransformer.enrich(MeldepliktDao::transformFromRecord))
+        .processValues({ EnrichWithMetadata() })
         .foreach { _, dao -> MeldepliktRepo.save(dao) }
 
     return builder.build()
