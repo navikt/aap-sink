@@ -1,7 +1,9 @@
 package app
 
 import app.kafka.Topics
+import app.meldeplikt.MeldepliktRepo
 import app.søker.SøkerRepository
+import app.søknad.SøknadRepo
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
 import io.ktor.client.call.*
@@ -169,6 +171,56 @@ internal class AppTest {
     }
 
     @Test
+    fun `can save søknad`() {
+        testApplication {
+            environment { config = mocks.applicationConfig() }
+            application {
+                app(mocks.kafka).also {
+                    val søknadTopic = mocks.kafka.inputTopic(Topics.søknad)
+                    val testSerde = JsonSerde.jackson<TestSøknad>()
+
+                    val personident = Random.nextInt(Integer.MAX_VALUE).toString()
+
+                    søknadTopic.produce(personident) {
+                        testSerde.serializer().serialize(Topics.søknad.name, TestSøknad(personident))
+                    }
+
+                    val søknad = awaitDatabase {
+                        SøknadRepo.search(personident)
+                    }?.singleOrNull()
+
+                    requireNotNull(søknad) { "søknad $personident skal ligger i datbase" }
+                }
+            }
+        }
+    }
+
+    @Test
+    fun `can save meldeplikt`() {
+        testApplication {
+            environment { config = mocks.applicationConfig() }
+            application {
+                app(mocks.kafka).also {
+                    val meldepliktTopic = mocks.kafka.inputTopic(Topics.meldeplikt)
+                    val testSerde = JsonSerde.jackson<TestMeldeplikt>()
+
+                    val personident = Random.nextInt(Integer.MAX_VALUE).toString()
+
+                    meldepliktTopic.produce(personident) {
+                        testSerde.serializer().serialize(Topics.meldeplikt.name, TestMeldeplikt(personident))
+                    }
+
+                    val meldeplikt = awaitDatabase {
+                        MeldepliktRepo.searchBy(personident)
+                    }?.singleOrNull()
+
+                    requireNotNull(meldeplikt) { "meldeplikt $personident skal ligger i datbase" }
+                }
+            }
+        }
+    }
+
+    @Test
     fun `can find last by timstamp`() {
         testApplication {
             environment { config = mocks.applicationConfig() }
@@ -225,6 +277,16 @@ internal class AppTest {
 private data class TestSøker(
     val personident: String,
     val status: String = "Mottatt",
+)
+
+private data class TestSøknad(
+    val personident: String,
+    val tittel: String = "Søknad",
+)
+
+private data class TestMeldeplikt(
+    val personident: String,
+    val melding: String = "Har jobba",
 )
 
 private data class TestVedtak(

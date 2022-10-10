@@ -4,6 +4,7 @@ import app.kafka.EnrichWithMetadata
 import app.kafka.Topics
 import app.meldeplikt.MeldepliktRepo
 import app.søker.SøkerRepository
+import app.søknad.SøknadRepo
 import app.vedtak.VedtakRepository
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
@@ -74,6 +75,10 @@ fun topology(): Topology {
     builder.consume(Topics.søkere)
         .processValues({ EnrichWithMetadata() })
         .foreach { _, dao -> SøkerRepository.save(dao) }
+
+    builder.consume(Topics.søknad)
+        .processValues({ EnrichWithMetadata() })
+        .foreach { _, dao -> SøknadRepo.save(dao) }
 
     builder.consume(Topics.vedtak)
         .processValues({ EnrichWithMetadata() })
