@@ -3,6 +3,7 @@ package app
 import app.kafka.EnrichWithMetadata
 import app.kafka.Topics
 import app.meldeplikt.MeldepliktRepo
+import app.mottaker.MottakerRepo
 import app.søker.SøkerRepository
 import app.søknad.SøknadRepo
 import app.vedtak.VedtakRepository
@@ -87,6 +88,10 @@ fun topology(): Topology {
     builder.consume(Topics.meldeplikt)
         .processValues({ EnrichWithMetadata() })
         .foreach { _, dao -> MeldepliktRepo.save(dao) }
+
+    builder.consume(Topics.mottaker)
+        .processValues({ EnrichWithMetadata() })
+        .foreach { _, dao -> MottakerRepo.save(dao) }
 
     return builder.build()
 }

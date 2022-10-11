@@ -2,6 +2,7 @@ package app
 
 import app.kafka.Topics
 import app.meldeplikt.MeldepliktRepo
+import app.mottaker.MottakerRepo
 import app.søker.SøkerRepository
 import app.søknad.SøknadRepo
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
@@ -19,10 +20,8 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
-import no.nav.aap.kafka.serde.json.JsonSerde
 import no.nav.aap.kafka.streams.test.KafkaStreamsMock
 import org.apache.kafka.streams.TestInputTopic
-import org.apache.kafka.streams.test.TestRecord
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -32,6 +31,7 @@ import org.testcontainers.containers.PostgreSQLContainer
 import org.testcontainers.containers.startupcheck.MinimumDurationRunningStartupCheckStrategy
 import java.time.Duration
 import kotlin.random.Random
+import kotlin.test.assertContentEquals
 import kotlin.test.assertEquals
 import kotlin.test.assertNotNull
 import kotlin.test.assertNull
@@ -56,13 +56,12 @@ internal class AppTest {
             environment { config = mocks.applicationConfig() }
             application {
                 app(mocks.kafka).also {
-                    val søkereTopic = mocks.kafka.inputTopic(Topics.søkere)
-                    val testSerde = JsonSerde.jackson<TestSøker>()
+                    val topic = mocks.kafka.testTopic(Topics.søkere)
 
                     val personident = Random.nextInt(Integer.MAX_VALUE).toString()
 
-                    søkereTopic.produce(personident) {
-                        testSerde.serializer().serialize(Topics.søkere.name, TestSøker(personident))
+                    topic.produce(personident) {
+                        KafkaDto(Topics.søkere).toByteArray()
                     }
 
                     val søker = awaitDatabase {
@@ -70,9 +69,7 @@ internal class AppTest {
                     }?.singleOrNull()
 
                     assertNotNull(søker)
-
-                    val dto = testSerde.deserializer().deserialize(Topics.søkere.name, søker.record.toByteArray())
-                    assertEquals(TestSøker(personident), dto)
+                    assertContentEquals(KafkaDto(Topics.søkere).toByteArray(), søker.record.toByteArray())
                 }
             }
 
@@ -96,16 +93,15 @@ internal class AppTest {
             environment { config = mocks.applicationConfig() }
             application {
                 app(mocks.kafka).also {
-                    val søkereTopic = mocks.kafka.inputTopic(Topics.søkere)
-                    val testSerde = JsonSerde.jackson<TestSøker>()
+                    val topic = mocks.kafka.testTopic(Topics.søkere)
 
                     val personident = Random.nextInt(Integer.MAX_VALUE).toString()
 
-                    søkereTopic.produce(personident) {
-                        testSerde.serializer().serialize(Topics.søkere.name, TestSøker(personident))
+                    topic.produce(personident) {
+                        KafkaDto(Topics.søkere).toByteArray()
                     }
 
-                    søkereTopic.tombstone(personident)
+                    topic.tombstone(personident)
 
                     val søkere = awaitDatabase {
                         SøkerRepository.search(personident)
@@ -124,13 +120,12 @@ internal class AppTest {
             environment { config = mocks.applicationConfig() }
             application {
                 app(mocks.kafka).also {
-                    val søkereTopic = mocks.kafka.inputTopic(Topics.søkere)
-                    val testSerde = JsonSerde.jackson<TestSøker>()
+                    val topic = mocks.kafka.testTopic(Topics.søkere)
 
                     val personident = Random.nextInt(Integer.MAX_VALUE).toString()
 
-                    søkereTopic.produce(personident) {
-                        testSerde.serializer().serialize(Topics.søkere.name, TestSøker(personident))
+                    topic.produce(personident) {
+                        KafkaDto(Topics.søkere).toByteArray()
                     }
 
                     val søker = awaitDatabase {
@@ -150,13 +145,12 @@ internal class AppTest {
             environment { config = mocks.applicationConfig() }
             application {
                 app(mocks.kafka).also {
-                    val søkereTopic = mocks.kafka.inputTopic(Topics.søkere)
-                    val testSerde = JsonSerde.jackson<VersionedTestSøker>()
+                    val topic = mocks.kafka.testTopic(Topics.søkere)
 
                     val personident = Random.nextInt(Integer.MAX_VALUE).toString()
 
-                    søkereTopic.produce(personident) {
-                        testSerde.serializer().serialize(Topics.søkere.name, VersionedTestSøker(personident))
+                    topic.produce(personident) {
+                        VersionedKafkaDto(Topics.søkere).toByteArray()
                     }
 
                     val søker = awaitDatabase {
@@ -176,13 +170,12 @@ internal class AppTest {
             environment { config = mocks.applicationConfig() }
             application {
                 app(mocks.kafka).also {
-                    val søknadTopic = mocks.kafka.inputTopic(Topics.søknad)
-                    val testSerde = JsonSerde.jackson<TestSøknad>()
+                    val topic = mocks.kafka.testTopic(Topics.søknad)
 
                     val personident = Random.nextInt(Integer.MAX_VALUE).toString()
 
-                    søknadTopic.produce(personident) {
-                        testSerde.serializer().serialize(Topics.søknad.name, TestSøknad(personident))
+                    topic.produce(personident) {
+                        KafkaDto(Topics.søknad).toByteArray()
                     }
 
                     val søknad = awaitDatabase {
@@ -201,13 +194,12 @@ internal class AppTest {
             environment { config = mocks.applicationConfig() }
             application {
                 app(mocks.kafka).also {
-                    val meldepliktTopic = mocks.kafka.inputTopic(Topics.meldeplikt)
-                    val testSerde = JsonSerde.jackson<TestMeldeplikt>()
+                    val meldepliktTopic = mocks.kafka.testTopic(Topics.meldeplikt)
 
                     val personident = Random.nextInt(Integer.MAX_VALUE).toString()
 
                     meldepliktTopic.produce(personident) {
-                        testSerde.serializer().serialize(Topics.meldeplikt.name, TestMeldeplikt(personident))
+                        KafkaDto(Topics.meldeplikt).toByteArray()
                     }
 
                     val meldeplikt = awaitDatabase {
@@ -221,18 +213,41 @@ internal class AppTest {
     }
 
     @Test
+    fun `can save mottaker`() {
+        testApplication {
+            environment { config = mocks.applicationConfig() }
+            application {
+                app(mocks.kafka).also {
+                    val topic = mocks.kafka.testTopic(Topics.mottaker)
+
+                    val personident = Random.nextInt(Integer.MAX_VALUE).toString()
+
+                    topic.produce(personident) {
+                        KafkaDto(Topics.mottaker).toByteArray()
+                    }
+
+                    val mottaker = awaitDatabase {
+                        MottakerRepo.searchBy(personident)
+                    }?.singleOrNull()
+
+                    requireNotNull(mottaker) { "mottaker $personident skal ligger i datbase" }
+                }
+            }
+        }
+    }
+
+    @Test
     fun `can find last by timstamp`() {
         testApplication {
             environment { config = mocks.applicationConfig() }
             application {
                 app(mocks.kafka).also {
-                    val søkereTopic = mocks.kafka.inputTopic(Topics.søkere)
-                    val testSerde = JsonSerde.jackson<TestSøker>()
+                    val topic = mocks.kafka.testTopic(Topics.søkere)
 
                     val personident = Random.nextInt(Integer.MAX_VALUE).toString()
 
-                    søkereTopic.produce(personident) {
-                        testSerde.serializer().serialize(Topics.søkere.name, TestSøker(personident))
+                    topic.produce(personident) {
+                        KafkaDto(Topics.søkere).toByteArray()
                     }
 
                     val søker = awaitDatabase {
@@ -241,8 +256,8 @@ internal class AppTest {
 
                     requireNotNull(søker) { "søker $personident skal ligger i datbase" }
 
-                    val expected = TestSøker(personident)
-                    val actual = jacksonObjectMapper().readValue<TestSøker>(søker.record)
+                    val expected = KafkaDto(Topics.søkere)
+                    val actual = jacksonObjectMapper().readValue<KafkaDto>(søker.record)
                     assertEquals(expected, actual)
                 }
             }
@@ -255,7 +270,7 @@ internal class AppTest {
 //            environment { config = mocks.applicationConfig() }
 //            application {
 //                app(mocks.kafka).also {
-//                    val søkereTopic = mocks.kafka.inputTopic(Topics.søkere)
+//                    val søkereTopic = mocks.kafka.testTopic(Topics.søkere)
 //                    val serializer = JsonSerde.jackson<TestSøker>().serializer()
 //                    val ident = "1234"
 //                    søkereTopic.produce(ident) { serializer.serialize(Topics.søkere.name, TestSøker(ident)) }
@@ -273,32 +288,6 @@ internal class AppTest {
 //        }
 //    }
 }
-
-private data class TestSøker(
-    val personident: String,
-    val status: String = "Mottatt",
-)
-
-private data class TestSøknad(
-    val personident: String,
-    val tittel: String = "Søknad",
-)
-
-private data class TestMeldeplikt(
-    val personident: String,
-    val melding: String = "Har jobba",
-)
-
-private data class TestVedtak(
-    val personident: String,
-    val status: String = "Innvilget",
-)
-
-private data class VersionedTestSøker(
-    val personident: String,
-    val status: String = "Mottatt",
-    val version: Int = 2,
-)
 
 private fun <T> awaitDatabase(timeoutMs: Long = 1_000, query: suspend () -> T?): T? = runBlocking {
     withTimeoutOrNull(timeoutMs) {
@@ -341,4 +330,4 @@ class Mocks : AutoCloseable {
 }
 
 inline fun <reified V : Any> TestInputTopic<String, V>.produce(key: String, value: () -> V) = pipeInput(key, value())
-private fun <V> TestInputTopic<String, V>.tombstone(key: String) = pipeInput(TestRecord(key, null))
+private fun <V> TestInputTopic<String, V>.tombstone(key: String) = pipeInput(key, null)
