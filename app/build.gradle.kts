@@ -20,7 +20,7 @@ dependencies {
     implementation("com.github.navikt.aap-libs:kafka:$aapLibVersion")
 
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.4")
-    implementation("io.micrometer:micrometer-registry-prometheus:1.9.4")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.9.5")
     runtimeOnly("ch.qos.logback:logback-classic:1.4.4")
     implementation("net.logstash.logback:logstash-logback-encoder:7.2")
     runtimeOnly("org.postgresql:postgresql:42.5.0")
