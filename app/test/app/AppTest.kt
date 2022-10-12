@@ -218,12 +218,12 @@ internal class AppTest {
             environment { config = mocks.applicationConfig() }
             application {
                 app(mocks.kafka).also {
-                    val topic = mocks.kafka.testTopic(Topics.mottaker)
+                    val topic = mocks.kafka.testTopic(Topics.mottakere)
 
                     val personident = Random.nextInt(Integer.MAX_VALUE).toString()
 
                     topic.produce(personident) {
-                        KafkaDto(Topics.mottaker).toByteArray()
+                        KafkaDto(Topics.mottakere).toByteArray()
                     }
 
                     val mottaker = awaitDatabase {

@@ -89,7 +89,7 @@ fun topology(): Topology {
         .processValues({ EnrichWithMetadata() })
         .foreach { _, dao -> MeldepliktRepo.save(dao) }
 
-    builder.consume(Topics.mottaker)
+    builder.consume(Topics.mottakere)
         .processValues({ EnrichWithMetadata() })
         .foreach { _, dao -> MottakerRepo.save(dao) }
 
