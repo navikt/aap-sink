@@ -52,7 +52,7 @@ jobs:
           - cluster: prod-gcp
             vars: prod.yml
 
-    name: Deploy (${{ matrix.cluster }})
+    name: deploy (${{ matrix.cluster }})
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
