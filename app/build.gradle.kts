@@ -23,7 +23,7 @@ dependencies {
     runtimeOnly("ch.qos.logback:logback-classic:1.4.4")
     implementation("net.logstash.logback:logstash-logback-encoder:7.2")
     runtimeOnly("org.postgresql:postgresql:42.5.0")
-    implementation("org.flywaydb:flyway-core:9.5.1")
+    implementation("org.flywaydb:flyway-core:9.10.1")
     implementation("org.jetbrains.exposed:exposed-java-time:0.40.1")
     implementation("org.jetbrains.exposed:exposed-jdbc:0.40.1")
 
