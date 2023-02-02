@@ -36,15 +36,14 @@ object SøkerRepository {
             .map(::toDao)
     }
 
-    fun lastBy(personident: String, column: (SøkerTable) -> Expression<*>): Dao = transaction {
+    fun takeBy(personident: String, take: Int, direction: SortOrder, column: (SøkerTable) -> Expression<*>): List<Dao> = transaction {
         addLogger(SqlTraceLogger)
 
         SøkerTable
             .select(SøkerTable.personident eq personident)
-            .orderBy(column(SøkerTable), SortOrder.DESC)
-            .limit(1)
+            .orderBy(column(SøkerTable), direction)
+            .limit(take)
             .map(::toDao)
-            .single()
     }
 
     private fun toDao(rs: ResultRow) = Dao(

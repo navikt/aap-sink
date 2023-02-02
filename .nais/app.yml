@@ -20,6 +20,10 @@ spec:
             envVarPrefix: DB
   secureLogs:
     enabled: true
+  accessPolicy:
+    inbound:
+      rules:
+        - application: sink-utforsker
   replicas:
     cpuThresholdPercentage: 90
     disableAutoScaling: true

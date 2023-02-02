@@ -22,6 +22,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
 import no.nav.aap.kafka.streams.test.KafkaStreamsMock
 import org.apache.kafka.streams.TestInputTopic
+import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
 import org.junit.jupiter.api.AfterAll
 import org.junit.jupiter.api.BeforeAll
@@ -251,7 +252,7 @@ internal class AppTest {
                     }
 
                     val søker = awaitDatabase {
-                        SøkerRepository.lastBy(personident) { it.timestamp }
+                        SøkerRepository.takeBy(personident, 1, SortOrder.DESC) { it.timestamp }.single()
                     }
 
                     requireNotNull(søker) { "søker $personident skal ligger i datbase" }
@@ -259,6 +260,7 @@ internal class AppTest {
                     val expected = KafkaDto(Topics.søkere)
                     val actual = jacksonObjectMapper().readValue<KafkaDto>(søker.record)
                     assertEquals(expected, actual)
+                    println(jacksonObjectMapper().writeValueAsString(listOf(søker)))
                 }
             }
         }

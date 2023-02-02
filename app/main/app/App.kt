@@ -16,6 +16,7 @@ import io.ktor.server.engine.*
 import io.ktor.server.metrics.micrometer.*
 import io.ktor.server.netty.*
 import io.ktor.server.plugins.contentnegotiation.*
+import io.ktor.server.request.*
 import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.micrometer.prometheus.PrometheusConfig
@@ -28,6 +29,7 @@ import org.apache.kafka.streams.StreamsBuilder
 import org.apache.kafka.streams.Topology
 import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.sql.Database
+import org.jetbrains.exposed.sql.SortOrder
 
 fun main() {
     embeddedServer(Netty, port = 8080, module = Application::app).start(wait = true)
@@ -67,6 +69,27 @@ fun Application.app(kafka: KStreams = KafkaStreams) {
 
     routing {
         actuators(prometheus, kafka)
+
+        get("/søker") {
+            val antall = requireNotNull(call.parameters["antall"]) { "Mangler antall (1, 5) som query param" }
+            val retning = enumValueOf<SortOrder>(
+                requireNotNull(call.parameters["retning"]) { "Mangler retning (ASC, DESC) som query parm " }
+            )
+
+            val personident = requireNotNull(call.request.header("personident")) {
+                "Request mangler personident som header"
+            }
+
+            val søker: List<Dao>  = SøkerRepository.takeBy(
+                personident = personident,
+                take = antall.toInt(),
+                direction = retning,
+            ) {
+                it.timestamp
+            }
+
+            call.respond(søker)
+        }
     }
 }
 

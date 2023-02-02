@@ -36,13 +36,13 @@ object SøknadRepo {
             .map(::toDao)
     }
 
-    fun lastBy(personident: String, column: (SøknadTable) -> Expression<*>): Dao = transaction {
+    fun lastBy(personident: String, take: Int, column: (SøknadTable) -> Expression<*>): Dao = transaction {
         addLogger(SqlTraceLogger)
 
         SøknadTable
             .select(SøknadTable.personident eq personident)
             .orderBy(column(SøknadTable), SortOrder.DESC)
-            .limit(1)
+            .limit(take)
             .map(::toDao)
             .single()
     }

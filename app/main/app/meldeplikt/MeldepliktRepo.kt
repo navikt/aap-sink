@@ -37,13 +37,13 @@ object MeldepliktRepo {
             .map(::toDao)
     }
 
-    fun lastBy(personident: String, column: (MeldepliktTable) -> Expression<*>): Dao = transaction {
+    fun takeBy(personident: String, take: Int, column: (MeldepliktTable) -> Expression<*>): Dao = transaction {
         addLogger(SqlTraceLogger)
 
         MeldepliktTable
             .select(MeldepliktTable.personident eq personident)
             .orderBy(column(MeldepliktTable), SortOrder.DESC)
-            .limit(1)
+            .limit(take)
             .map(::toDao)
             .single()
     }

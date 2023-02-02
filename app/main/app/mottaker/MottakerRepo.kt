@@ -37,13 +37,13 @@ object MottakerRepo {
             .map(::toDao)
     }
 
-    fun lastBy(personident: String, column: (MottakerTable) -> Expression<*>): Dao = transaction {
+    fun takeBy(personident: String, take: Int, column: (MottakerTable) -> Expression<*>): Dao = transaction {
         addLogger(SqlTraceLogger)
 
         MottakerTable
             .select(MottakerTable.personident eq personident)
             .orderBy(column(MottakerTable), SortOrder.DESC)
-            .limit(1)
+            .limit(take)
             .map(::toDao)
             .single()
     }
