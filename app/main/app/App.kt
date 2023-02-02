@@ -80,13 +80,13 @@ fun Application.app(kafka: KStreams = KafkaStreams) {
                 "Request mangler personident som header"
             }
 
-            val søker: List<Dao>  = SøkerRepository.takeBy(
+            val søker: List<Dto> = SøkerRepository.takeBy(
                 personident = personident,
                 take = antall.toInt(),
                 direction = retning,
             ) {
                 it.timestamp
-            }
+            }.map(Dto::from)
 
             call.respond(søker)
         }
