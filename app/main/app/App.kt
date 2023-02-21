@@ -1,14 +1,15 @@
 package app
 
-import app.kafka.EnrichWithMetadata
 import app.kafka.Topics
 import app.meldeplikt.MeldepliktRepo
 import app.mottaker.MottakerRepo
 import app.søker.SøkerRepository
 import app.søknad.SøknadRepo
 import app.vedtak.VedtakRepository
+import com.fasterxml.jackson.databind.ObjectMapper
 import com.fasterxml.jackson.databind.SerializationFeature
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import io.ktor.http.*
 import io.ktor.serialization.jackson.*
 import io.ktor.server.application.*
@@ -21,12 +22,9 @@ import io.ktor.server.response.*
 import io.ktor.server.routing.*
 import io.micrometer.prometheus.PrometheusConfig
 import io.micrometer.prometheus.PrometheusMeterRegistry
-import no.nav.aap.kafka.streams.KStreams
-import no.nav.aap.kafka.streams.KafkaStreams
-import no.nav.aap.kafka.streams.extension.consume
+import no.nav.aap.kafka.streams.v2.*
+import no.nav.aap.kafka.streams.v2.processor.ProcessorMetadata
 import no.nav.aap.ktor.config.loadConfig
-import org.apache.kafka.streams.StreamsBuilder
-import org.apache.kafka.streams.Topology
 import org.flywaydb.core.Flyway
 import org.jetbrains.exposed.sql.Database
 import org.jetbrains.exposed.sql.SortOrder
@@ -35,7 +33,7 @@ fun main() {
     embeddedServer(Netty, port = 8080, module = Application::app).start(wait = true)
 }
 
-fun Application.app(kafka: KStreams = KafkaStreams) {
+fun Application.app(kafka: KStreams = KafkaStreams()) {
     val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
     install(MicrometerMetrics) { registry = prometheus }
     install(ContentNegotiation) {
@@ -93,31 +91,39 @@ fun Application.app(kafka: KStreams = KafkaStreams) {
     }
 }
 
-fun topology(): Topology {
-    val builder = StreamsBuilder()
+fun topology(): Topology = topology {
+    val jackson: ObjectMapper = jacksonObjectMapper()
 
-    builder.consume(Topics.søkere)
-        .processValues({ EnrichWithMetadata() })
-        .foreach { _, dao -> SøkerRepository.save(dao) }
+    fun consumeAndSave(topic: Topic<ByteArray>, save: (Dao) -> Unit){
+        consume(topic){ key, value, metadata ->
+            val dao = dao(key, value, jackson, metadata)
+            save(dao)
+        }
+    }
 
-    builder.consume(Topics.søknad)
-        .processValues({ EnrichWithMetadata() })
-        .foreach { _, dao -> SøknadRepo.save(dao) }
-
-    builder.consume(Topics.vedtak)
-        .processValues({ EnrichWithMetadata() })
-        .foreach { _, dao -> VedtakRepository.save(dao) }
-
-    builder.consume(Topics.meldeplikt)
-        .processValues({ EnrichWithMetadata() })
-        .foreach { _, dao -> MeldepliktRepo.save(dao) }
-
-    builder.consume(Topics.mottakere)
-        .processValues({ EnrichWithMetadata() })
-        .foreach { _, dao -> MottakerRepo.save(dao) }
-
-    return builder.build()
+    consumeAndSave(Topics.søkere, SøkerRepository::save)
+    consumeAndSave(Topics.søknad, SøknadRepo::save)
+    consumeAndSave(Topics.meldeplikt, MeldepliktRepo::save)
+    consumeAndSave(Topics.mottakere, MottakerRepo::save)
+    consumeAndSave(Topics.vedtak, VedtakRepository::save)
 }
+
+private fun dao(
+    key: String,
+    value: ByteArray?,
+    jackson: ObjectMapper,
+    metadata: ProcessorMetadata
+) = Dao(
+    personident = key,
+    record = value?.decodeToString() ?: "tombstone",
+    dtoVersion = value?.let(jackson::readTree)?.get("version")?.takeUnless { it.isNull }?.intValue(),
+    topic = metadata.topic,
+    partition = metadata.partition,
+    offset = metadata.offset,
+    timestamp = metadata.timestamp,
+    systemTimeMs = metadata.streamTimeMs,
+    streamTimeMs = metadata.systemTimeMs
+)
 
 fun Route.actuators(prometheus: PrometheusMeterRegistry, kafka: KStreams) {
     route("/actuator") {
@@ -125,11 +131,11 @@ fun Route.actuators(prometheus: PrometheusMeterRegistry, kafka: KStreams) {
             call.respond(prometheus.scrape())
         }
         get("/live") {
-            val status = if (kafka.isLive()) HttpStatusCode.OK else HttpStatusCode.InternalServerError
+            val status = if (kafka.live()) HttpStatusCode.OK else HttpStatusCode.InternalServerError
             call.respond(status, "sink")
         }
         get("/ready") {
-            val status = if (kafka.isReady()) HttpStatusCode.OK else HttpStatusCode.InternalServerError
+            val status = if (kafka.ready()) HttpStatusCode.OK else HttpStatusCode.InternalServerError
             call.respond(status, "sink")
         }
     }

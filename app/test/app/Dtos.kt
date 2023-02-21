@@ -1,7 +1,9 @@
 package app
 
-import no.nav.aap.kafka.serde.json.JsonSerde
-import no.nav.aap.kafka.streams.Topic
+import com.fasterxml.jackson.databind.ObjectMapper
+import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
+import no.nav.aap.kafka.streams.v2.Topic
+
 
 internal data class KafkaDto (
     val topic: String,
@@ -9,9 +11,9 @@ internal data class KafkaDto (
 ) {
     constructor(topic: Topic<ByteArray>): this(topic.name, "data")
 
-    private val serializer = JsonSerde.jackson<KafkaDto>().serializer()
+    private val jackson: ObjectMapper = jacksonObjectMapper()
 
-    fun toByteArray(): ByteArray = serializer.serialize(topic, this)
+    fun toByteArray(): ByteArray = jackson.writeValueAsBytes(this)
 }
 
 internal data class VersionedKafkaDto(
@@ -20,7 +22,7 @@ internal data class VersionedKafkaDto(
 ) {
     constructor(topic: Topic<ByteArray>, version: Int = 2): this(topic.name, version)
 
-    private val serializer = JsonSerde.jackson<VersionedKafkaDto>().serializer()
+    private val jackson: ObjectMapper = jacksonObjectMapper()
 
-    fun toByteArray(): ByteArray = serializer.serialize(topic, this)
+    fun toByteArray(): ByteArray = jackson.writeValueAsBytes(this)
 }

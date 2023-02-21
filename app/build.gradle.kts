@@ -6,8 +6,8 @@ application {
     mainClass.set("app.AppKt")
 }
 
-val aapLibVersion = "3.5.23"
-val ktorVersion = "2.1.2"
+val aapLibVersion = "3.5.77"
+val ktorVersion = "2.2.3"
 
 dependencies {
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
@@ -16,23 +16,23 @@ dependencies {
     implementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
 
     implementation("com.github.navikt.aap-libs:ktor-utils:$aapLibVersion")
-    implementation("com.github.navikt.aap-libs:kafka:$aapLibVersion")
+    implementation("com.github.navikt.aap-libs:kafka-2:$aapLibVersion")
 
-    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.13.4")
-    implementation("io.micrometer:micrometer-registry-prometheus:1.9.5")
-    runtimeOnly("ch.qos.logback:logback-classic:1.4.4")
+    implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.2")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.10.4")
+    runtimeOnly("ch.qos.logback:logback-classic:1.4.5")
     implementation("net.logstash.logback:logstash-logback-encoder:7.2")
-    runtimeOnly("org.postgresql:postgresql:42.5.0")
-    implementation("org.flywaydb:flyway-core:9.5.1")
-    implementation("org.jetbrains.exposed:exposed-java-time:0.40.1")
-    implementation("org.jetbrains.exposed:exposed-jdbc:0.40.1")
+    runtimeOnly("org.postgresql:postgresql:42.5.4")
+    implementation("org.flywaydb:flyway-core:9.15.0")
+    implementation("org.jetbrains.exposed:exposed-java-time:0.41.1")
+    implementation("org.jetbrains.exposed:exposed-jdbc:0.41.1")
 
     testImplementation("io.ktor:ktor-client-cio:$ktorVersion")
     testImplementation("io.ktor:ktor-client-content-negotiation:$ktorVersion")
     testImplementation("io.ktor:ktor-server-content-negotiation:$ktorVersion")
 
-    testImplementation("com.github.navikt.aap-libs:kafka-test:$aapLibVersion")
+    testImplementation("com.github.navikt.aap-libs:kafka-test-2:$aapLibVersion")
     testImplementation("io.ktor:ktor-server-test-host:$ktorVersion")
-    testImplementation("org.testcontainers:postgresql:1.17.4")
+    testImplementation("org.testcontainers:postgresql:1.17.6")
     testImplementation(kotlin("test"))
 }

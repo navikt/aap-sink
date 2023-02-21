@@ -1,10 +1,11 @@
 package app
 
-import no.nav.aap.kafka.streams.KStreamsConfig
+import no.nav.aap.kafka.streams.v2.config.StreamsConfig
+
 
 data class Config(
     val database: DatabaseConfig,
-    val kafka: KStreamsConfig,
+    val kafka: StreamsConfig,
 )
 
 data class DatabaseConfig(
