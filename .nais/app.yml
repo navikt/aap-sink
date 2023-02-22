@@ -5,6 +5,7 @@ metadata:
   namespace: aap
   labels:
     team: aap
+    sub: vedtak
   annotations:
     github.url: "https://github.com/navikt/aap-sink"
 spec:
