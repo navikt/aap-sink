@@ -6,8 +6,6 @@ metadata:
   labels:
     team: aap
     sub: vedtak
-  annotations:
-    github.url: "https://github.com/navikt/aap-sink"
 spec:
   image: {{image}}
   kafka:

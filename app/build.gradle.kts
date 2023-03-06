@@ -6,8 +6,8 @@ application {
     mainClass.set("app.AppKt")
 }
 
-val aapLibVersion = "3.5.77"
-val ktorVersion = "2.2.3"
+val aapLibVersion = "3.6.28"
+val ktorVersion = "2.2.4"
 
 dependencies {
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
