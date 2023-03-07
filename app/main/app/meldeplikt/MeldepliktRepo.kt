@@ -37,15 +37,14 @@ object MeldepliktRepo {
             .map(::toDao)
     }
 
-    fun takeBy(personident: String, take: Int, column: (MeldepliktTable) -> Expression<*>): Dao = transaction {
+    fun takeBy(personident: String, take: Int, direction: SortOrder, column: (MeldepliktTable) -> Expression<*>): List<Dao> = transaction {
         addLogger(SqlTraceLogger)
 
         MeldepliktTable
             .select(MeldepliktTable.personident eq personident)
-            .orderBy(column(MeldepliktTable), SortOrder.DESC)
+            .orderBy(column(MeldepliktTable), direction)
             .limit(take)
             .map(::toDao)
-            .single()
     }
 
     private fun toDao(rs: ResultRow) = Dao(

@@ -86,7 +86,42 @@ fun Application.app(kafka: KStreams = KafkaStreams()) {
                 it.timestamp
             }.map(Dto::from)
 
-            call.respond(søker)
+            val søknad: List<Dto> = SøknadRepo.takeBy(
+                personident = personident,
+                take = antall.toInt(),
+                direction = retning,
+            ) {
+                it.timestamp
+            }.map(Dto::from)
+
+           val vedtak: List<Dto> = VedtakRepository.takeBy(
+                personident = personident,
+                take = antall.toInt(),
+                direction = retning,
+            ) {
+                it.timestamp
+            }.map(Dto::from)
+
+           val meldeplikt: List<Dto> = MeldepliktRepo.takeBy(
+                personident = personident,
+                take = antall.toInt(),
+                direction = retning,
+            ) {
+                it.timestamp
+            }.map(Dto::from)
+
+           val mottakere: List<Dto> = MottakerRepo.takeBy(
+                personident = personident,
+                take = antall.toInt(),
+                direction = retning,
+            ) {
+                it.timestamp
+            }.map(Dto::from)
+
+            val result = (søker + søknad + vedtak + meldeplikt + mottakere)
+                .sortedBy { it.timestamp }.takeLast(antall.toInt()) // take vs takeLast basert på retning
+
+            call.respond(result)
         }
     }
 }

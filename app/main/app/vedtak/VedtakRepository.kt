@@ -36,15 +36,14 @@ object VedtakRepository {
             .map(::toDao)
     }
 
-    fun takeBy(personident: String, take: Int, column: (VedtakTable) -> Expression<*>): Dao = transaction {
+    fun takeBy(personident: String, take: Int, direction: SortOrder, column: (VedtakTable) -> Expression<*>): List<Dao> = transaction {
         addLogger(SqlTraceLogger)
 
         VedtakTable
             .select(VedtakTable.personident eq personident)
-            .orderBy(column(VedtakTable), SortOrder.DESC)
+            .orderBy(column(VedtakTable), direction)
             .limit(take)
             .map(::toDao)
-            .single()
     }
 
     private fun toDao(rs: ResultRow) = Dao(

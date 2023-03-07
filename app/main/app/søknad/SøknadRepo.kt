@@ -36,6 +36,16 @@ object SøknadRepo {
             .map(::toDao)
     }
 
+    fun takeBy(personident: String, take: Int, direction: SortOrder, column: (SøknadTable) -> Expression<*>): List<Dao> = transaction {
+        addLogger(SqlTraceLogger)
+
+        SøknadTable
+            .select(SøknadTable.personident eq personident)
+            .orderBy(column(SøknadTable), direction)
+            .limit(take)
+            .map(SøknadRepo::toDao)
+    }
+
     fun lastBy(personident: String, take: Int, column: (SøknadTable) -> Expression<*>): Dao = transaction {
         addLogger(SqlTraceLogger)
 
