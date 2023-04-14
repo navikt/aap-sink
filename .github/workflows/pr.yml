@@ -10,13 +10,13 @@ jobs:
   build:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-java@v3
+      - uses: actions/checkout@v3.3.0
+      - uses: actions/setup-java@v3.11.0
         with:
           java-version: 19
           distribution: 'temurin'
 
-      - uses: gradle/gradle-build-action@v2.3.3
+      - uses: gradle/gradle-build-action@v2.4.1
         with:
           arguments: test --continue --no-daemon --configuration-cache
 

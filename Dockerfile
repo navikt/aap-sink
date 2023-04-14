@@ -1,15 +1,20 @@
-# RocksDB (kafka streams KTable) bruker noen gclibs som ikke er inkludert i alpine.
-# Alpine bruker noe som heter 'musl libc' i steden for 'gclib' som vi trenger, og vi får derfor ikke
-# lagt inn pakken manuelt. Vi mangler libc6-compat, som finnes i 17-jdk-focal som er ubunt-basert.
-FROM eclipse-temurin:19-jdk-focal
-
+# Docker multistage layer with a fatty jar stripped of unused rocskdb-instances
+FROM alpine:3.17 as app
+RUN apk --update --no-cache add zip
 COPY /app/build/libs/app-all.jar app.jar
+RUN zip -d app.jar librocksdbjni-linux32.so librocksdbjni-linux32-musl.so librocksdbjni-linux64.so \
+    librocksdbjni-linux-aarch64.so librocksdbjni-linux-aarch64-musl.so librocksdbjni-linux-ppc64le.so \
+    librocksdbjni-linux-ppc64le-musl.so librocksdbjni-linux-s390x.so librocksdbjni-linux-s390x-musl.so \
+    librocksdbjni-osx-arm64.jnilib librocksdbjni-osx-x86_64.jnilib librocksdbjni-win64.dll
 
-RUN apt-get update && apt-get install -y locales
 
-RUN sed -i -e 's/# nb_NO.UTF-8 UTF-8/nb_NO.UTF-8 UTF-8/' /etc/locale.gen && locale-gen
-ENV LC_ALL="nb_NO.UTF-8"
-ENV LANG="nb_NO.UTF-8"
-ENV TZ="Europe/Oslo"
+# Docker image on Alpine Linux with JRE 19 Temurin and C++ standard lib (for rocksdb)
+FROM eclipse-temurin:19.0.1_10-jre-alpine
+ENV LANG='nb_NO.UTF-8' LANGUAGE='nb_NO:nb' LC_ALL='nb:NO.UTF-8' TZ="Europe/Oslo"
+RUN apk --update --no-cache add libstdc++
+COPY --from=app app.jar .
+CMD ["java", "-XX:ActiveProcessorCount=2", "-jar", "app.jar"]
 
-CMD ["java", "-Xmx4G", "-Xms2G", "-XX:+UseParallelGC", "-jar", "app.jar"]
+# use -XX:+UseParallelGC when 2 CPUs and 4G RAM.
+# use G1GC when using more than 4G RAM and/or more than 2 CPUs
+# use -XX:ActiveProcessorCount=2 if less than 1G RAM.

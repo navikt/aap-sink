@@ -19,11 +19,11 @@ dependencies {
     implementation("com.github.navikt.aap-libs:kafka-2:$aapLibVersion")
 
     implementation("com.fasterxml.jackson.datatype:jackson-datatype-jsr310:2.14.2")
-    implementation("io.micrometer:micrometer-registry-prometheus:1.10.4")
-    runtimeOnly("ch.qos.logback:logback-classic:1.4.5")
-    implementation("net.logstash.logback:logstash-logback-encoder:7.2")
+    implementation("io.micrometer:micrometer-registry-prometheus:1.10.5")
+    runtimeOnly("ch.qos.logback:logback-classic:1.4.6")
+    implementation("net.logstash.logback:logstash-logback-encoder:7.3")
     runtimeOnly("org.postgresql:postgresql:42.5.4")
-    implementation("org.flywaydb:flyway-core:9.15.0")
+    implementation("org.flywaydb:flyway-core:9.16.0")
     implementation("org.jetbrains.exposed:exposed-java-time:0.41.1")
     implementation("org.jetbrains.exposed:exposed-jdbc:0.41.1")
 
