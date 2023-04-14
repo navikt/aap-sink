@@ -20,7 +20,7 @@ import kotlinx.coroutines.flow.channelFlow
 import kotlinx.coroutines.flow.firstOrNull
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withTimeoutOrNull
-import no.nav.aap.kafka.streams.v2.test.KStreamsMock
+import no.nav.aap.kafka.streams.v2.test.StreamsMock
 import org.apache.kafka.streams.TestInputTopic
 import org.jetbrains.exposed.sql.SortOrder
 import org.jetbrains.exposed.sql.transactions.experimental.newSuspendedTransaction
@@ -310,7 +310,7 @@ class Mocks : AutoCloseable {
         start()
     }
 
-    val kafka = KStreamsMock()
+    val kafka = StreamsMock()
 
     fun applicationConfig() = MapApplicationConfig(
         "DB_HOST" to postgres.host,

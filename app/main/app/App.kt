@@ -33,7 +33,7 @@ fun main() {
     embeddedServer(Netty, port = 8080, module = Application::app).start(wait = true)
 }
 
-fun Application.app(kafka: KStreams = KafkaStreams()) {
+fun Application.app(kafka: Streams = KafkaStreams()) {
     val prometheus = PrometheusMeterRegistry(PrometheusConfig.DEFAULT)
     install(MicrometerMetrics) { registry = prometheus }
     install(ContentNegotiation) {
@@ -160,7 +160,7 @@ private fun dao(
     streamTimeMs = metadata.systemTimeMs
 )
 
-fun Route.actuators(prometheus: PrometheusMeterRegistry, kafka: KStreams) {
+fun Route.actuators(prometheus: PrometheusMeterRegistry, kafka: Streams) {
     route("/actuator") {
         get("/metrics") {
             call.respond(prometheus.scrape())
