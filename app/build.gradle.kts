@@ -22,7 +22,7 @@ dependencies {
     implementation("io.micrometer:micrometer-registry-prometheus:1.10.6")
     runtimeOnly("ch.qos.logback:logback-classic:1.4.6")
     implementation("net.logstash.logback:logstash-logback-encoder:7.3")
-    runtimeOnly("org.postgresql:postgresql:42.5.4")
+    runtimeOnly("org.postgresql:postgresql:42.6.0")
     implementation("org.flywaydb:flyway-core:9.16.3")
     implementation("org.jetbrains.exposed:exposed-java-time:0.41.1")
     implementation("org.jetbrains.exposed:exposed-jdbc:0.41.1")
