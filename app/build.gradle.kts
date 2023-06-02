@@ -7,7 +7,7 @@ application {
 }
 
 val aapLibVersion = "3.7.44"
-val ktorVersion = "2.3.0"
+val ktorVersion = "2.3.1"
 
 dependencies {
     implementation("io.ktor:ktor-server-netty:$ktorVersion")
