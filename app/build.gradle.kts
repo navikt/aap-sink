@@ -24,7 +24,7 @@ dependencies {
     implementation("net.logstash.logback:logstash-logback-encoder:7.4")
     runtimeOnly("org.postgresql:postgresql:42.6.0")
     implementation("org.flywaydb:flyway-core:9.21.1")
-    implementation("org.jetbrains.exposed:exposed-java-time:0.41.1")
+    implementation("org.jetbrains.exposed:exposed-java-time:0.42.0")
     implementation("org.jetbrains.exposed:exposed-jdbc:0.41.1")
 
     testImplementation("io.ktor:ktor-client-cio:$ktorVersion")
